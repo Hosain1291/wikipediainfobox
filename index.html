@@ -252,14 +252,6 @@
                 </div>
               </div>
 
-              <!-- 정당 퀵 파우더 색상 입히기 -->
-              <div>
-                <span class="block text-[10px] font-bold text-neutral-500 mb-1">정당 퀵 컬러칩:</span>
-                <div class="flex flex-wrap gap-1" id="quick-colors-box">
-                  <!-- JS로 퀵컬러 주입 -->
-                </div>
-              </div>
-
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-[11px] font-bold text-neutral-600 mb-1">총 득표수</label>
@@ -574,18 +566,6 @@
       }
     };
 
-    const COMMON_COLORS = [
-      { name: "민주", hex: "#004EA2" },
-      { name: "국민", hex: "#E61E2B" },
-      { name: "정의", hex: "#FFCA08" },
-      { name: "진보", hex: "#D6001C" },
-      { name: "혁신", hex: "#0032A0" },
-      { name: "개혁", hex: "#FF7016" },
-      { name: "공화", hex: "#E81B23" },
-      { name: "민주(미)", hex: "#3333FF" },
-      { name: "무소속", hex: "#808080" }
-    ];
-
     // 애플리케이션 라이브 상태 데이터
     let state = {
       electionName: "",
@@ -616,7 +596,6 @@
       
       // 포커스 소실 방지를 위한 순수 인풋 필드 실시간 이벤트 바인딩
       bindInputEvents();
-      renderQuickColors();
     };
 
     // 3. 인풋 실시간 바인딩 처리 (키보드가 풀리는 현상 차단 비결)
@@ -700,6 +679,7 @@
       }
     }
 
+    // 프리셋 데이터 적용 함수
     function loadPresetData(data) {
       state.electionName = data.electionName;
       state.country = data.country || "대한민국";
@@ -904,25 +884,6 @@
       updatePreview();
       updateMarkup();
       triggerToast(`총합 ${total.toLocaleString()}표 기준 득표율이 보정되었습니다.`);
-    }
-
-    // 10. 퀵 컬러 팔레트 구축
-    function renderQuickColors() {
-      const box = document.getElementById("quick-colors-box");
-      box.innerHTML = "";
-      COMMON_COLORS.forEach(c => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "text-[10px] bg-white border border-neutral-200 hover:border-neutral-400 px-1.5 py-1 rounded flex items-center gap-1 transition";
-        btn.innerHTML = `<span class="w-2 h-2 rounded-full inline-block" style="background-color: ${c.hex}"></span>${c.name}`;
-        btn.onclick = () => {
-          document.getElementById("cand-color-picker").value = c.hex;
-          document.getElementById("cand-color-text").value = c.hex;
-          updateActiveCandidateValue("color", c.hex);
-          updateCandidateTabStyling(state.editingCandidateId, c.hex);
-        };
-        box.appendChild(btn);
-      });
     }
 
     // 11. 선거 인포박스 정밀 미리보기 HTML 컴파일러
