@@ -100,9 +100,9 @@
       <div>
         <h1 class="text-lg font-bold text-neutral-900 flex items-center gap-2 flex-wrap">
           위키백과 선거 인포박스 빌더
-          <span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-extrabold tracking-wider">v4.1 LAYOUT</span>
+          <span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-extrabold tracking-wider">v4.2 FILE_LOAD</span>
         </h1>
-        <p class="text-xs text-neutral-500">국민투표 지원 고증 강화판 • 인포박스 실시간 너비 제어 엔진 탑재</p>
+        <p class="text-xs text-neutral-500">국민투표 고증 완비 • 이미지 파일 업로드 & 링크 하이브리드 지원</p>
       </div>
     </div>
 
@@ -208,8 +208,17 @@
               </div>
               
               <div>
-                <label class="block text-xs font-bold text-neutral-600 mb-1">국기/문장 이미지 주소 (위키 파일 주소 권장)</label>
-                <input type="text" id="input-flagImage" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition" placeholder="예: https://.../Flag_of_Quebec.svg.png">
+                <div class="flex justify-between items-center mb-1">
+                  <label class="block text-xs font-bold text-neutral-600">국기/문장 이미지 설정</label>
+                  <span class="text-[10px] text-neutral-400">파일 올리기 또는 링크 주소 입력 가능</span>
+                </div>
+                <div class="flex gap-2">
+                  <input type="text" id="input-flagImage" class="flex-1 px-3 py-1.5 border border-neutral-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="예: https://.../Flag_of_Quebec.svg.png">
+                  <button onclick="document.getElementById('input-flagFile').click()" class="bg-neutral-800 hover:bg-neutral-900 text-white font-bold px-3 py-1.5 rounded text-xs transition active:scale-95 whitespace-nowrap">
+                    📁 파일 올리기
+                  </button>
+                  <input type="file" id="input-flagFile" accept="image/*" class="hidden" onchange="uploadLocalImage(event, 'flagImage', 'input-flagImage')">
+                </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3">
@@ -412,11 +421,22 @@
                 </div>
               </div>
 
-              <div class="p-3 bg-neutral-50 rounded border border-neutral-200 space-y-2">
+              <div class="p-3 bg-neutral-50 rounded border border-neutral-200 space-y-3">
                 <span class="block text-xs font-bold text-neutral-700">지표 지도 영역 (국민투표 및 일반선거 공통 지원)</span>
                 <div>
-                  <label class="block text-[10px] font-bold text-neutral-500 mb-1">지도 이미지 주소</label>
-                  <input type="text" id="input-mapImage" class="w-full px-2.5 py-1.5 border border-neutral-300 rounded text-xs bg-white font-mono" placeholder="지도로 출력할 완전한 URL 경로">
+                  <div class="flex justify-between items-center mb-1">
+                    <label class="block text-[10px] font-bold text-neutral-500">지도 사진 설정 (URL 링크 또는 파일 업로드)</label>
+                    <span class="text-[9px] text-indigo-600 font-semibold bg-indigo-50 px-1 py-0.5 rounded">업로드 지원</span>
+                  </div>
+                  
+                  <div class="flex gap-2">
+                    <input type="text" id="input-mapImage" class="flex-1 px-2.5 py-1.5 border border-neutral-300 rounded text-xs bg-white font-mono" placeholder="이미지 웹 주소(URL)">
+                    <button onclick="document.getElementById('input-mapFile').click()" class="bg-neutral-800 hover:bg-neutral-900 text-white font-bold px-3 py-1.5 rounded text-xs transition active:scale-95 whitespace-nowrap">
+                      📁 파일 올리기
+                    </button>
+                    <!-- 업로드 처리용 숨김 input 파일 객체 -->
+                    <input type="file" id="input-mapFile" accept="image/*" class="hidden" onchange="uploadLocalImage(event, 'mapImage', 'input-mapImage')">
+                  </div>
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-neutral-500 mb-1">지도 범례 및 설명 주석</label>
@@ -625,11 +645,61 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L16 4m0 13V4m0 0L9 7" />
             </svg>
             <div class="text-xs font-semibold text-neutral-400">지도 데이터를 불러올 수 없습니다</div>
-            <div class="text-[9px] text-neutral-300 mt-0.5">정밀 이미지 URL을 입력해주세요</div>
+            <div class="text-[9px] text-neutral-300 mt-0.5">이미지 파일을 선택하거나 주소를 입력하세요</div>
           </div>
         `;
       }
     };
+
+    // 이미지 파일 로컬 업로드 처리 핸들러 (Base64 인메모리 바인딩 및 URL 겸용)
+    function uploadLocalImage(event, stateKey, inputId) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64Data = e.target.result;
+        state[stateKey] = base64Data;
+        
+        // 인풋 박스 텍스트 값을 Base64 덤프 대신 가독성 요약으로 치환
+        setElementValue(inputId, "[로컬 업로드 사진] " + file.name);
+        
+        updatePreview();
+        updateMarkup();
+        triggerToast(`사진 파일 (${file.name})이 정상적으로 업로드되었습니다.`);
+      };
+      reader.readAsDataURL(file);
+      event.target.value = ""; // 초기화
+    }
+
+    // 후보자 상세 필드 업로드 전용 프록시 트리거
+    function triggerCandidateImageUpload(fieldId) {
+      const fileInput = document.getElementById(`file-${fieldId}`);
+      if (fileInput) {
+        fileInput.click();
+      }
+    }
+
+    // 후보자 상세 필드 업로드 처리 함수
+    function uploadCandidateImage(event, fieldId) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64Data = e.target.result;
+        updateCandidateFieldValue(fieldId, base64Data);
+        
+        const textInput = document.getElementById(`input-val-${fieldId}`);
+        if (textInput) {
+          textInput.value = "[로컬 업로드 사진] " + file.name;
+        }
+        
+        triggerToast(`후보자 사진 파일 (${file.name})이 정상 업로드되었습니다.`);
+      };
+      reader.readAsDataURL(file);
+      event.target.value = "";
+    }
 
     // 위키백과 마크업 리치 텍스트 파싱 전용 모터 함수
     function parseWikipediaMarkup(text) {
@@ -1057,7 +1127,7 @@
       }
     }
 
-    // [신규 핵심] 인포박스 가로 너비 동적 조절기
+    // 인포박스 가로 너비 동적 조절기
     function changePreviewWidth(val) {
       let width = parseInt(val);
       if (isNaN(width) || width < 260) width = 260;
@@ -1331,7 +1401,14 @@
       if (typeInput) typeInput.value = state.electionType;
 
       setElementValue("input-electionName", state.electionName);
-      setElementValue("input-flagImage", state.flagImage);
+      
+      // 이미지 값의 경우 Base64 데이터면 요약명 노출, 아닐 경우 주소 노출
+      if (state.flagImage.startsWith("data:image")) {
+        setElementValue("input-flagImage", "[로컬 업로드 사진] 복구 완료");
+      } else {
+        setElementValue("input-flagImage", state.flagImage);
+      }
+      
       setElementValue("input-beforeElectionYear", state.beforeElectionYear);
       setElementValue("input-afterElectionYear", state.afterElectionYear);
       setElementValue("input-electionDate", state.electionDate);
@@ -1345,9 +1422,14 @@
       setElementValue("input-beforeParty", state.beforeParty);
       setElementValue("input-afterElection", state.afterElection);
       setElementValue("input-afterParty", state.afterParty);
-      setElementValue("input-mapImage", state.mapImage);
+      
+      if (state.mapImage.startsWith("data:image")) {
+        setElementValue("input-mapImage", "[로컬 업로드 사진] 복구 완료");
+      } else {
+        setElementValue("input-mapImage", state.mapImage);
+      }
+      
       setElementValue("input-mapCaption", state.mapCaption);
-
       setElementValue("input-referendumQuestion", state.referendumQuestion);
 
       // 가로 너비 컨트롤 값 동시 동조화
@@ -1570,17 +1652,34 @@
       state.candidateFieldsConfig.forEach(field => {
         const val = cand.fieldValues[field.id] || "";
         const div = document.createElement("div");
-        div.className = "space-y-1";
+        div.className = "space-y-1 bg-neutral-50 p-2.5 rounded border border-neutral-200";
         
-        let placeholder = `${field.label} 정보 기입 (마크업 가능)`;
-        if (field.type === 'image') placeholder = "위키백과 파일명 혹은 이미지 URL 기입";
+        let labelDesc = field.type === 'image' ? '📷 이미지 설정 (파일 업로드 또는 주소 링크)' : '✍️ 텍스트 정보 입력';
+        let placeholderVal = field.type === 'image' ? '웹 주소 주소(URL) 입력' : `${field.label} 값 기입 (위키백과 스타일 마크업 가능)`;
+        let displayVal = val.startsWith("data:image") ? "[로컬 업로드 사진] 완료" : val;
+
+        let inputHtml = "";
+        if (field.type === 'image') {
+          // 로컬 업로드 + URL 링크 하이브리드 지원 마운트
+          inputHtml = `
+            <div class="flex gap-2">
+              <input type="text" id="input-val-${field.id}" value="${displayVal}" oninput="updateCandidateFieldValue('${field.id}', this.value)" class="flex-1 px-2.5 py-1.5 border border-neutral-300 rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="${placeholderVal}">
+              <button onclick="triggerCandidateImageUpload('${field.id}')" class="bg-neutral-800 hover:bg-neutral-900 text-white font-bold px-2.5 py-1.5 rounded text-[11px] transition whitespace-nowrap active:scale-95">📁 파일 올리기</button>
+              <input type="file" id="file-${field.id}" accept="image/*" class="hidden" onchange="uploadCandidateImage(event, '${field.id}')">
+            </div>
+          `;
+        } else {
+          inputHtml = `
+            <input type="text" value="${val}" oninput="updateCandidateFieldValue('${field.id}', this.value)" class="w-full px-2.5 py-1.5 border border-neutral-300 rounded text-xs bg-white focus:outline-none transition font-sans" placeholder="${placeholderVal}">
+          `;
+        }
 
         div.innerHTML = `
-          <div class="flex justify-between items-center">
-            <label class="block text-[11px] font-bold text-neutral-600">${field.label} 값 입력</label>
-            <span class="text-[9px] bg-neutral-200 px-1 py-0.5 rounded text-neutral-500 font-medium">${field.type === 'image' ? '📷 이미지' : '✍️ 텍스트'}</span>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-[11px] font-bold text-neutral-600">${field.label}</label>
+            <span class="text-[9px] text-neutral-400 font-medium">${labelDesc}</span>
           </div>
-          <input type="text" value="${val}" oninput="updateCandidateFieldValue('${field.id}', this.value)" class="w-full px-2.5 py-1.5 border border-neutral-300 rounded text-xs bg-white focus:outline-none transition font-sans" placeholder="${placeholder}">
+          ${inputHtml}
         `;
         container.appendChild(div);
       });
@@ -1664,7 +1763,7 @@
       });
     }
 
-    // 사용자 정의 공통 추가 정보 제어 함수군 (포커스 유실 원천 차단형 설계)
+    // 사용자 정의 공통 추가 정보 제어 함수군
     function addCustomStat() {
       if (!state.customStats) state.customStats = [];
       const safeId = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11);
@@ -1674,7 +1773,6 @@
       updateMarkup();
     }
 
-    // 공통 정보 통계 삭제
     function deleteCustomStat(id) {
       if (!state.customStats) return;
       state.customStats = state.customStats.filter(s => s.id !== id);
@@ -1683,7 +1781,6 @@
       updateMarkup();
     }
 
-    // 공통 정보 통계 실시간 연계
     function updateCustomStat(id, key, val) {
       if (!state.customStats) return;
       const item = state.customStats.find(s => s.id === id);
@@ -1712,7 +1809,7 @@
       });
     }
 
-    // JSON 내보내기/가져오기 핵심 동력 엔진
+    // JSON 내보내기/가져오기 핵심 동력 엔진 (로컬 Base64 데이터 포함 완결 전송 구조)
     function exportStateToJson() {
       const clone = JSON.parse(JSON.stringify(state));
       delete clone.activeTab;
@@ -1725,7 +1822,7 @@
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
-      triggerToast("인포박스 전체 데이터가 JSON 파일로 다운로드되었습니다!");
+      triggerToast("이미지 정보가 포함된 전체 백업 파일이 저장되었습니다!");
     }
 
     function triggerJsonImport() {
@@ -1746,7 +1843,7 @@
           }
           
           loadPresetData(parsed);
-          triggerToast("성공적으로 JSON 데이터를 가져와 복구했습니다!");
+          triggerToast("성공적으로 복원 및 렌더링에 성공했습니다!");
         } catch (err) {
           triggerToast("가져오기 실패: 올바른 JSON 파일을 선택해주세요.");
           console.error(err);
@@ -1757,7 +1854,7 @@
     }
 
 
-    // 선거 인포박스 정밀 미리보기 HTML 컴파일러 (고증 강화 한글화 분기 엔진 및 DOM 수동 파손 방지 가드)
+    // 선거 인포박스 정밀 미리보기 HTML 컴파일러
     function updatePreview() {
       // 메타 정보 수정
       const previewName = document.getElementById("preview-electionName");
@@ -1855,7 +1952,7 @@
             <div class="mx-auto max-w-full overflow-hidden flex items-center justify-center p-1 border border-[#e8ecef] bg-neutral-50">
               <img id="preview-map-image" src="${state.mapImage}" alt="선거 지도" onerror="handleMapError(this)" class="max-h-[190px] w-auto object-contain">
             </div>
-            <!-- 요청 사항: 검은색 글씨에 수평 중앙(가운데) 정렬 반영 -->
+            <!-- 고증 유지: 검은색 글씨에 수평 중앙(가운데) 정렬 반영 -->
             <p id="preview-map-caption" class="text-[11px] text-black text-center font-medium mt-1.5 leading-snug px-1">
               ${parseWikipediaMarkup(state.mapCaption) || ""}
             </p>
@@ -2058,7 +2155,7 @@
         code += `{{${pStr}\n`;
         code += `| 명칭 = ${state.electionName || ''}\n`;
         if (state.flagImage) {
-          const flagName = state.flagImage.includes('/') ? state.flagImage.split('/').pop() : state.flagImage;
+          const flagName = state.flagImage.startsWith("data:image") ? "Uploaded_Local_Flag.png" : (state.flagImage.includes('/') ? state.flagImage.split('/').pop() : state.flagImage);
           code += `| 국기 = ${flagName || ''}\n`;
         }
         code += `| 투표일 = ${state.electionDate || ''}\n`;
@@ -2099,7 +2196,7 @@
         }
 
         if (state.mapImage) {
-          const fileName = state.mapImage.includes('/') ? state.mapImage.split('/').pop() : state.mapImage;
+          const fileName = state.mapImage.startsWith("data:image") ? "Uploaded_Local_Map.png" : (state.mapImage.includes('/') ? state.mapImage.split('/').pop() : state.mapImage);
           code += `| 지도 = ${fileName || ''}\n`;
           code += `| 지도설명 = ${state.mapCaption || ''}\n`;
         }
@@ -2114,7 +2211,7 @@
         code += `{{${pStr}\n`;
         code += `| 선거명 = ${state.electionName || ''}\n`;
         if (state.flagImage) {
-          const flagName = state.flagImage.includes('/') ? state.flagImage.split('/').pop() : state.flagImage;
+          const flagName = state.flagImage.startsWith("data:image") ? "Uploaded_Local_Flag.png" : (state.flagImage.includes('/') ? state.flagImage.split('/').pop() : state.flagImage);
           code += `| 국기 = ${flagName || ''}\n`;
         }
         code += `| 선거일 = ${state.electionDate || ''}\n`;
@@ -2140,7 +2237,7 @@
         }
 
         if (state.mapImage) {
-          const fileName = state.mapImage.includes('/') ? state.mapImage.split('/').pop() : state.mapImage;
+          const fileName = state.mapImage.startsWith("data:image") ? "Uploaded_Local_Map.png" : (state.mapImage.includes('/') ? state.mapImage.split('/').pop() : state.mapImage);
           code += `| 지도 = ${fileName || ''}\n`;
           code += `| 지도설명 = ${state.mapCaption || ''}\n`;
         }
@@ -2162,7 +2259,7 @@
             state.candidateFieldsConfig.forEach(field => {
               const val = c.fieldValues[field.id] || "";
               if (field.type === "image") {
-                const imgFile = val.includes('/') ? val.split('/').pop() : val;
+                const imgFile = val.startsWith("data:image") ? `Candidate_Portrait_${n}.png` : (val.includes('/') ? val.split('/').pop() : val);
                 code += `| 사진${n} = ${imgFile || ''}\n`;
               } else {
                 const paramKey = (field.id.startsWith("field_") || field.id.startsWith("custom_")) ? field.label.replace(/\s+/g, '') : field.id;
