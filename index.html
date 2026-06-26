@@ -76,10 +76,22 @@
       <div>
         <h1 class="text-lg font-bold text-neutral-900 flex items-center gap-2 flex-wrap">
           위키백과 선거 인포박스 빌더
-          <span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-extrabold tracking-wider">v3.1 MARKUP</span>
+          <span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-extrabold tracking-wider">v3.2 PRO</span>
         </h1>
-        <p class="text-xs text-neutral-500">포커스 유실 없음 • 스마트 이미지 안심 패치 탑재</p>
+        <p class="text-xs text-neutral-500">JSON 저장/백업 • 실시간 상세수치 무제한 가변 관리기 적용</p>
       </div>
+    </div>
+
+    <!-- JSON 백업 및 복원 컨트롤 센터 -->
+    <div class="flex items-center gap-1.5 flex-wrap bg-neutral-50 p-2 rounded-lg border border-neutral-200">
+      <span class="text-xs font-bold text-neutral-600">💾 데이터:</span>
+      <button onclick="exportStateToJson()" class="text-xs bg-neutral-800 hover:bg-neutral-900 text-white font-bold px-2.5 py-1.5 rounded shadow-sm transition active:scale-95">
+        내보내기 (JSON)
+      </button>
+      <button onclick="triggerJsonImport()" class="text-xs bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold px-2.5 py-1.5 rounded shadow-sm transition active:scale-95">
+        불러오기
+      </button>
+      <input type="file" id="json-import-input" accept=".json" class="hidden" onchange="importStateFromJson(event)">
     </div>
 
     <!-- 폰트 변경 전용 탭 -->
@@ -172,18 +184,18 @@
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs font-bold text-neutral-600 mb-1">이전 선거 연도</label>
-                  <input type="text" id="input-beforeElectionYear" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition" placeholder="예: 2022">
+                  <input type="text" id="input-beforeElectionYear" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none" placeholder="예: 2022">
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-neutral-600 mb-1">차기 선거 연도</label>
-                  <input type="text" id="input-afterElectionYear" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition" placeholder="예: 2030">
+                  <input type="text" id="input-afterElectionYear" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none" placeholder="예: 2030">
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs font-bold text-neutral-600 mb-1">선거일 (정중앙 출력)</label>
-                  <input type="text" id="input-electionDate" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition" placeholder="예: 2026년 6월 3일">
+                  <input type="text" id="input-electionDate" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none" placeholder="예: 2026년 6월 3일">
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-neutral-600 mb-1">임기 공직 명칭</label>
@@ -196,9 +208,9 @@
                 <span class="block text-xs font-bold text-neutral-700">📌 선거 추가 통계 정보 (마크업 지원)</span>
                 <div>
                   <label class="block text-[10px] font-bold text-neutral-500">선거 의석 정보 등 자유 주석 (줄바꿈 가능)</label>
-                  <textarea id="input-turnoutDetails" rows="3" class="w-full p-2 border border-neutral-300 rounded text-xs focus:outline-none" placeholder="예: '''16개 광역단체장'''&#10;'''933명 광역의원'''"></textarea>
+                  <textarea id="input-turnoutDetails" rows="2" class="w-full p-2 border border-neutral-300 rounded text-xs focus:outline-none" placeholder="예: '''16개 광역단체장'''&#10;'''933명 광역의원'''"></textarea>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-2 gap-2 pb-2">
                   <div>
                     <label class="block text-[10px] font-bold text-neutral-500">총 선거인수(Registered)</label>
                     <input type="text" id="input-registeredVoters" class="w-full p-1.5 border border-neutral-300 rounded text-xs" placeholder="예: 34,079,860">
@@ -208,6 +220,20 @@
                     <input type="text" id="input-turnoutText" class="w-full p-1.5 border border-neutral-300 rounded text-xs" placeholder="예: '''61.0%''' ({{increase}} 10.1pp)">
                   </div>
                 </div>
+
+                <!-- 실시간 사용자 정의 공통 추가 정보 슬롯 -->
+                <div class="border-t border-neutral-200 pt-2.5">
+                  <div class="flex justify-between items-center mb-1.5">
+                    <span class="block text-[11px] font-bold text-neutral-700">📊 사용자 정의 공통 추가 정보 (행 자유 추가)</span>
+                    <button onclick="addCustomStat()" class="text-[10px] bg-neutral-800 hover:bg-neutral-900 text-white font-bold px-2 py-1 rounded transition">
+                      + 통계 행 추가
+                    </button>
+                  </div>
+                  <div id="custom-stats-list" class="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                    <!-- JS에 의해 동적 생성 -->
+                  </div>
+                </div>
+
               </div>
 
             </div>
@@ -354,6 +380,19 @@
                 </div>
               </div>
 
+              <!-- 후보자별 개별 맞춤 상세 수치 가변 슬롯 -->
+              <div class="p-3 bg-neutral-100 rounded-lg border border-neutral-200 space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="block text-xs font-bold text-neutral-700">🏷️ 후보자별 맞춤형 상세 수치 (컬럼 자동 조율)</span>
+                  <button onclick="addCustomCandidateField()" class="text-[10px] bg-neutral-800 hover:bg-neutral-900 text-white font-bold px-2 py-1 rounded transition">
+                    + 수치 항목 추가
+                  </button>
+                </div>
+                <div id="custom-cand-fields-list" class="space-y-1.5 max-h-[160px] overflow-y-auto">
+                  <!-- JS 동적 생성 -->
+                </div>
+              </div>
+
               <!-- 이미지 등록 -->
               <div id="section-image-uploader">
                 <label class="block text-[11px] font-bold text-neutral-600 mb-1">인물 프로필 이미지 주소</label>
@@ -435,7 +474,7 @@
         </div>
       </div>
 
-      <!-- 위키백과 마크업 리치 텍스트 서식 가이드 보드 (image_e3ae8e.png 완벽 고증 구현) -->
+      <!-- 위키백과 마크업 리치 텍스트 서식 가이드 보드 -->
       <div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 space-y-3">
         <h3 class="font-bold text-neutral-900 text-sm flex items-center gap-1.5 border-b pb-2">
           <span class="w-2.5 h-2.5 bg-neutral-700 rounded-full inline-block"></span>
@@ -517,7 +556,7 @@
 
           <!-- 선거지도 컨테이너 -->
           <div id="preview-map-section" class="p-2 text-center border-b border-[#a2a9b1] bg-white">
-            <div class="mx-auto max-w-full overflow-hidden flex items-center justify-center p-1 border border-[#e8ecef] bg-neutral-50">
+            <div class="mx-auto max-w-full overflow-hidden flex items-center justify-center p-1 border border-[#e8ecef] bg-[#f8f9fa]">
               <img id="preview-map-image" src="" alt="선거 지도" onerror="handleMapError(this)" class="max-h-[190px] w-auto object-contain">
             </div>
             <p id="preview-map-caption" class="text-[11px] text-neutral-500 mt-1.5 leading-snug px-1 text-left">
@@ -653,6 +692,9 @@
         beforeParty: "국민의힘",
         afterElection: "미정",
         afterParty: "더불어민주당",
+        customStats: [
+          { id: "s1", label: "지방자치 의석 전체", value: "'''4,103석'''" }
+        ],
         candidates: [
           {
             id: "1",
@@ -665,7 +707,10 @@
             regionalSeatsWon: "'''12개 단체장'''\n'''589명 의원'''",
             regionalSeatsChange: "{{increase}} 7개 단체장\n{{increase}} 267명 의원",
             municipalSeatsWon: "'''119개 단체장'''\n'''1,574명 의원'''",
-            municipalSeatsChange: "{{increase}} 56개 단체장\n{{increase}} 190명 의원"
+            municipalSeatsChange: "{{increase}} 56개 단체장\n{{increase}} 190명 의원",
+            customFields: [
+              { id: "cf_1_1", label: "대표 공약", value: "'''기본소득 연동 지방 연금'''" }
+            ]
           },
           {
             id: "2",
@@ -678,7 +723,10 @@
             regionalSeatsWon: "'''4개 단체장'''\n'''327명 의원'''",
             regionalSeatsChange: "{{decrease}} 8개 단체장\n{{decrease}} 213명 의원",
             municipalSeatsWon: "'''95개 단체장'''\n'''1,277명 의원'''",
-            municipalSeatsChange: "{{decrease}} 50개 단체장\n{{decrease}} 158명 의원"
+            municipalSeatsChange: "{{decrease}} 50개 단체장\n{{decrease}} 158명 의원",
+            customFields: [
+              { id: "cf_2_1", label: "대표 공약", value: "'''메가시티 광역교통 패스'''" }
+            ]
           }
         ]
       },
@@ -699,6 +747,9 @@
         beforeParty: "더불어민주당",
         afterElection: "우원식",
         afterParty: "더불어민주당",
+        customStats: [
+          { id: "s2", label: "비례 의석 비율", value: "15.3% (46석)" }
+        ],
         candidates: [
           {
             id: "1",
@@ -713,7 +764,8 @@
             constituencyVote: "15,075,279",
             constituencyPercent: "'''51.57%''' ({{increase}} 1.66 pp)",
             regionalVote: "7,567,459",
-            regionalPercent: "'''26.70%''' ({{decrease}} 6.66pp)"
+            regionalPercent: "'''26.70%''' ({{decrease}} 6.66pp)",
+            customFields: []
           },
           {
             id: "2",
@@ -728,7 +780,8 @@
             constituencyVote: "13,179,769",
             constituencyPercent: "'''45.08%''' ({{increase}} 3.62 pp)",
             regionalVote: "10,395,264",
-            regionalPercent: "'''36.67%''' ({{increase}} 2.83pp)"
+            regionalPercent: "'''36.67%''' ({{increase}} 2.83pp)",
+            customFields: []
           }
         ]
       },
@@ -749,6 +802,7 @@
         beforeParty: "더불어민주당",
         afterElection: "미정",
         afterParty: "미정",
+        customStats: [],
         candidates: [
           { id: "1", name: "정청래", party: "더불어민주당", color: "#004EA2", seatsWon: "161" },
           { id: "2", name: "장동혁", party: "국민의힘", color: "#E61E2B", seatsWon: "107" },
@@ -777,6 +831,10 @@
         beforeParty: "국민의힘",
         afterElection: "이재명",
         afterParty: "더불어민주당",
+        customStats: [
+          { id: "s3_1", label: "조사 기관", value: "한국갤럽 통합정리" },
+          { id: "s3_2", label: "표본 오차", value: "95% 신뢰수준에서 ±3.1%p" }
+        ],
         candidates: [
           {
             id: "1",
@@ -786,8 +844,9 @@
             image: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Lee_Jae-myung_official_portrait_%28cropped%29.jpg/150px-Lee_Jae-myung_official_portrait_%28cropped%29.jpg",
             votes: "17,287,513",
             percentage: "'''49.42%'''",
-            homeState: "",
-            electoralVotes: ""
+            customFields: [
+              { id: "cf_3_1_1", label: "대표 슬로건", value: "'''이재명은 합니다'''" }
+            ]
           },
           {
             id: "2",
@@ -797,8 +856,9 @@
             image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Kim_Moon-soo_cropped.jpg/150px-Kim_Moon-soo_cropped.jpg",
             votes: "14,395,639",
             percentage: "'''41.15%'''",
-            homeState: "",
-            electoralVotes: ""
+            customFields: [
+              { id: "cf_3_2_1", label: "대표 슬로건", value: "'''새로운 대한민국'''" }
+            ]
           },
           {
             id: "3",
@@ -808,8 +868,9 @@
             image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Lee_Jun-seok_at_party_convention_July_2021_%28cropped%29.jpg/150px-Lee_Jun-seok_at_party_convention_July_2021_%28cropped%29.jpg",
             votes: "2,917,523",
             percentage: "'''8.34%'''",
-            homeState: "",
-            electoralVotes: ""
+            customFields: [
+              { id: "cf_3_3_1", label: "대표 슬로건", value: "'''개혁의 젊은 바람'''" }
+            ]
           }
         ]
       }
@@ -836,6 +897,7 @@
       afterElection: "",
       afterParty: "",
       candidates: [],
+      customStats: [], // 선거전체 추가 공통 통계
       editingCandidateId: "1",
       activeTab: "meta",
       outputLang: "ko",
@@ -1038,7 +1100,14 @@
       state.beforeParty = data.beforeParty || "";
       state.afterElection = data.afterElection || "";
       state.afterParty = data.afterParty || "";
+      state.customStats = data.customStats ? JSON.parse(JSON.stringify(data.customStats)) : [];
       state.candidates = JSON.parse(JSON.stringify(data.candidates)); // 깊은 복사
+      
+      // 후보자 맞춤 필드 리커버리 가드
+      state.candidates.forEach(c => {
+        if (!c.customFields) c.customFields = [];
+      });
+
       state.editingCandidateId = state.candidates[0].id;
 
       // 폼 필드값 초기화 (안전한 setElementValue 모터 가드 적용)
@@ -1067,6 +1136,8 @@
       toggleElectionTypeUI();
       renderCandidateTabs();
       loadActiveCandidateToForm();
+      renderCustomStatsForm();
+      renderCustomCandidateFieldsForm();
       updatePreview();
       updateMarkup();
     }
@@ -1186,6 +1257,9 @@
       setElementValue("cand-municipalSeatsWon", cand.municipalSeatsWon || "");
       setElementValue("cand-regionalSeatsChange", cand.regionalSeatsChange || "");
       setElementValue("cand-municipalSeatsChange", cand.municipalSeatsChange || "");
+
+      // 후보자 개별 맞춤 상세 수치 렌더링 호출
+      renderCustomCandidateFieldsForm();
     }
 
     function updateActiveCandidateValue(key, value) {
@@ -1214,7 +1288,8 @@
         percentage: "0.00",
         seatsWon: "0",
         alliance: "-",
-        lastElection: "0"
+        lastElection: "0",
+        customFields: []
       };
       state.candidates.push(newCand);
       state.editingCandidateId = nextId;
@@ -1264,6 +1339,190 @@
       triggerToast(`총합 ${total.toLocaleString()}표 기준 득표율이 보정되었습니다.`);
     }
 
+    // [신규] 사용자 정의 공통 추가 정보 제어 함수군 (포커스 유실 원천 차단형 설계)
+    function addCustomStat() {
+      if (!state.customStats) state.customStats = [];
+      const safeId = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11);
+      state.customStats.push({ id: safeId, label: "추가 항목", value: "값" });
+      renderCustomStatsForm();
+      updatePreview();
+      updateMarkup();
+    }
+
+    function deleteCustomStat(id) {
+      if (!state.customStats) return;
+      state.customStats = state.customStats.filter(s => s.id !== id);
+      renderCustomStatsForm();
+      updatePreview();
+      updateMarkup();
+    }
+
+    function updateCustomStat(id, key, val) {
+      if (!state.customStats) return;
+      const item = state.customStats.find(s => s.id === id);
+      if (item) {
+        item[key] = val;
+        updatePreview();
+        updateMarkup();
+      }
+    }
+
+    function renderCustomStatsForm() {
+      const container = document.getElementById("custom-stats-list");
+      if (!container) return;
+      container.innerHTML = "";
+      if (!state.customStats) state.customStats = [];
+
+      state.customStats.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "flex gap-2 items-center";
+        div.innerHTML = `
+          <input type="text" value="${item.label}" oninput="updateCustomStat('${item.id}', 'label', this.value)" class="w-1/3 px-2 py-1 text-xs border border-neutral-300 rounded focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white" placeholder="수치 이름">
+          <input type="text" value="${item.value}" oninput="updateCustomStat('${item.id}', 'value', this.value)" class="flex-1 px-2 py-1 text-xs border border-neutral-300 rounded focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white" placeholder="값">
+          <button onclick="deleteCustomStat('${item.id}')" class="text-red-500 hover:text-red-700 font-bold text-xs p-1">✖</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // [신규] 후보자별 개별 맞춤 통계 수치 제어 함수군
+    function addCustomCandidateField() {
+      const cand = state.candidates.find(c => c.id === state.editingCandidateId);
+      if (!cand) return;
+      if (!cand.customFields) cand.customFields = [];
+      const safeId = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11);
+      cand.customFields.push({ id: safeId, label: "맞춤 항목", value: "수치 입력" });
+      renderCustomCandidateFieldsForm();
+      updatePreview();
+      updateMarkup();
+    }
+
+    function deleteCustomCandidateField(id) {
+      const cand = state.candidates.find(c => c.id === state.editingCandidateId);
+      if (!cand) return;
+      cand.customFields = cand.customFields.filter(f => f.id !== id);
+      renderCustomCandidateFieldsForm();
+      updatePreview();
+      updateMarkup();
+    }
+
+    function updateCustomCandidateField(id, key, val) {
+      const cand = state.candidates.find(c => c.id === state.editingCandidateId);
+      if (!cand || !cand.customFields) return;
+      const field = cand.customFields.find(f => f.id === id);
+      if (field) {
+        field[key] = val;
+        updatePreview();
+        updateMarkup();
+      }
+    }
+
+    function renderCustomCandidateFieldsForm() {
+      const container = document.getElementById("custom-cand-fields-list");
+      if (!container) return;
+      container.innerHTML = "";
+      const cand = state.candidates.find(c => c.id === state.editingCandidateId);
+      if (!cand) return;
+      if (!cand.customFields) cand.customFields = [];
+
+      cand.customFields.forEach(field => {
+        const div = document.createElement("div");
+        div.className = "flex gap-2 items-center";
+        div.innerHTML = `
+          <input type="text" value="${field.label}" oninput="updateCustomCandidateField('${field.id}', 'label', this.value)" class="w-1/3 px-2 py-1 text-xs border border-neutral-300 rounded focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white" placeholder="수치 이름">
+          <input type="text" value="${field.value}" oninput="updateCustomCandidateField('${field.id}', 'value', this.value)" class="flex-1 px-2 py-1 text-xs border border-neutral-300 rounded focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white" placeholder="값">
+          <button onclick="deleteCustomCandidateField('${field.id}')" class="text-red-500 hover:text-red-700 font-bold text-xs p-1">✖</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // [신규] JSON 내보내기/가져오기 핵심 동력 엔진
+    function exportStateToJson() {
+      const clone = JSON.parse(JSON.stringify(state));
+      // 불필요한 UI 동작용 상태 제거
+      delete clone.activeTab;
+      
+      const fileName = `${state.electionName ? state.electionName.replace(/\s+/g, '_') : 'election_infobox'}.json`;
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(clone, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", fileName);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      triggerToast("인포박스 전체 데이터가 JSON 파일로 다운로드되었습니다!");
+    }
+
+    function triggerJsonImport() {
+      const fileInput = document.getElementById("json-import-input");
+      if (fileInput) fileInput.click();
+    }
+
+    function importStateFromJson(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          // JSON 포맷 가드 유효성 검사
+          if (!parsed.electionType && !parsed.candidates) {
+            throw new Error("유효한 선거 인포박스 빌더 JSON 형식이 아닙니다.");
+          }
+          
+          // 가변 및 구조 보완 복구 가드 주입
+          if (!parsed.candidates) parsed.candidates = [];
+          if (!parsed.customStats) parsed.customStats = [];
+          parsed.candidates.forEach(c => {
+            if (!c.customFields) c.customFields = [];
+          });
+
+          // 상태 모델 전역 전이
+          state = Object.assign({}, state, parsed);
+          state.activeTab = "meta"; // 안전 초기화
+
+          // 폼 필드값 일체 동기화
+          document.getElementById("input-electionType").value = state.electionType;
+          setElementValue("input-electionName", state.electionName);
+          setElementValue("input-flagImage", state.flagImage);
+          setElementValue("input-beforeElectionYear", state.beforeElectionYear);
+          setElementValue("input-afterElectionYear", state.afterElectionYear);
+          setElementValue("input-electionDate", state.electionDate);
+          setElementValue("input-title", state.title);
+
+          setElementValue("input-turnoutDetails", state.turnoutDetails);
+          setElementValue("input-registeredVoters", state.registeredVoters);
+          setElementValue("input-turnoutText", state.turnoutText);
+
+          setElementValue("input-beforeElection", state.beforeElection);
+          setElementValue("input-beforeParty", state.beforeParty);
+          setElementValue("input-afterElection", state.afterElection);
+          setElementValue("input-afterParty", state.afterParty);
+          setElementValue("input-mapImage", state.mapImage);
+          setElementValue("input-mapCaption", state.mapCaption);
+
+          toggleUSStyleUI();
+          toggleElectionTypeUI();
+          renderCandidateTabs();
+          loadActiveCandidateToForm();
+          renderCustomStatsForm();
+          renderCustomCandidateFieldsForm();
+          updatePreview();
+          updateMarkup();
+          triggerToast("성공적으로 JSON 데이터를 가져와 복구했습니다!");
+        } catch (err) {
+          triggerToast("가져오기 실패: 올바른 JSON 파일을 선택해주세요.");
+          console.error(err);
+        }
+      };
+      reader.readAsText(file);
+      // 재선택을 가능케 하기 위해 타겟 밸류 초기화
+      event.target.value = "";
+    }
+
+
     // 선거 인포박스 정밀 미리보기 HTML 컴파일러 (고증 강화 한글화 분기 엔진 및 DOM 수동 파손 방지 가드)
     function updatePreview() {
       // 메타 정보 수정
@@ -1297,17 +1556,27 @@
       const votersTurnoutElem = document.getElementById("preview-voters-turnout");
 
       if (statsContainer && turnoutDetailsElem && votersTurnoutElem) {
-        if (state.turnoutDetails || state.registeredVoters || state.turnoutText) {
+        if (state.turnoutDetails || state.registeredVoters || state.turnoutText || (state.customStats && state.customStats.length > 0)) {
           statsContainer.classList.remove("hidden");
           turnoutDetailsElem.innerHTML = parseWikipediaMarkup(state.turnoutDetails) || "";
           
           let voterHtml = "";
           if (state.registeredVoters) {
-            voterHtml += `<div><strong>선거인수</strong>: ${parseInt(state.registeredVoters.replace(/,/g, "") || 0).toLocaleString()}명</div>`;
+            voterHtml += `<div><strong>선거인수</strong>: ${parseInt(state.registeredVoters.toString().replace(/,/g, "") || 0).toLocaleString()}명</div>`;
           }
           if (state.turnoutText) {
             voterHtml += `<div><strong>투표율</strong>: ${parseWikipediaMarkup(state.turnoutText).replace(/\n/g, "<br>")}</div>`;
           }
+          
+          // [공통 상세수치 가변 슬롯 실시간 미리보기 주입]
+          if (state.customStats && state.customStats.length > 0) {
+            state.customStats.forEach(item => {
+              if (item.label && item.label.trim() !== "") {
+                voterHtml += `<div><strong>${parseWikipediaMarkup(item.label)}</strong>: ${parseWikipediaMarkup(item.value)}</div>`;
+              }
+            });
+          }
+
           votersTurnoutElem.innerHTML = voterHtml;
         } else {
           statsContainer.classList.add("hidden");
@@ -1606,6 +1875,37 @@
             tbody.appendChild(trPct);
           }
 
+          // [대격변] 후보자별 동적 추가 상세 맞춤 수치 렌더링 구역 (칼럼 정렬 100% 매칭)
+          const uniqueLabels = [];
+          row.forEach(c => {
+            if (c.customFields) {
+              c.customFields.forEach(f => {
+                if (f.label && f.label.trim() !== "" && !uniqueLabels.includes(f.label)) {
+                  uniqueLabels.push(f.label);
+                }
+              });
+            }
+          });
+
+          // 고유 키를 기반으로 일렬 <tr> 동조화 생성
+          uniqueLabels.forEach(label => {
+            const trCustom = document.createElement("tr");
+            trCustom.className = "border-b border-neutral-100 text-xs";
+            row.forEach(c => {
+              const td = document.createElement("td");
+              td.className = "p-1.5 text-center align-middle";
+              // 해당 라벨값 검색 매핑
+              const field = c.customFields ? c.customFields.find(f => f.label === label) : null;
+              const val = field ? field.value : "-";
+              td.innerHTML = `
+                <span class="text-[9px] text-neutral-400 block font-bold">${parseWikipediaMarkup(label)}</span>
+                <span class="text-neutral-800 font-semibold leading-snug">${parseWikipediaMarkup(val)}</span>
+              `;
+              trCustom.appendChild(td);
+            });
+            tbody.appendChild(trCustom);
+          });
+
         });
 
         table.appendChild(tbody);
@@ -1613,7 +1913,7 @@
       }
     }
 
-    // 미디어위키 마크업 출력 렌더링 구역 (안전 제어)
+    // 미디어위키 마크업 출력 렌더링 구역 (안전 제어 및 동적 상세 정보 통합)
     function updateMarkup() {
       const outBox = document.getElementById("markup-output");
       if (!outBox) return; // markup-output이 없을 경우 방지
@@ -1643,6 +1943,16 @@
         if (state.turnoutDetails) code += `| 선거정보주석 = ${state.turnoutDetails.replace(/\n/g, "<br>")}\n`;
         if (state.registeredVoters) code += `| 선거인수 = ${state.registeredVoters}\n`;
         if (state.turnoutText) code += `| 투표율 = ${state.turnoutText.replace(/\n/g, "<br>")}\n`;
+
+        // 가변 공통 통계 마크업 바인딩
+        if (state.customStats && state.customStats.length > 0) {
+          code += `\n<!-- 가변 추가 통계 -->\n`;
+          state.customStats.forEach(item => {
+            if (item.label && item.label.trim() !== "") {
+              code += `| ${item.label} = ${item.value}\n`;
+            }
+          });
+        }
 
         if (state.mapImage) {
           const fileName = state.mapImage.includes('/') ? state.mapImage.split('/').pop() : state.mapImage;
@@ -1679,6 +1989,15 @@
             code += `| 이전기초의석${n} = ${c.municipalSeatsLast || ''}\n`;
             code += `| 광역의석${n} = ${c.regionalSeatsWon || ''}\n`;
             code += `| 기초의석${n} = ${c.municipalSeatsWon || ''}\n`;
+          }
+
+          // 가변 후보자 개별 마크업 바인딩
+          if (c.customFields && c.customFields.length > 0) {
+            c.customFields.forEach(f => {
+              if (f.label && f.label.trim() !== "") {
+                code += `| ${f.label}${n} = ${f.value}\n`;
+              }
+            });
           }
         });
         code += `\n}}`;
