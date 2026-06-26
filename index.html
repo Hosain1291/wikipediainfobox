@@ -27,6 +27,26 @@
       font-display: swap;
     }
 
+    /* G마켓 산스 (GMarketSans) */
+    @font-face {
+        font-family: 'GMarketSans';
+        src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansLight.woff') format('woff');
+        font-weight: 300;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'GMarketSans';
+        src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff');
+        font-weight: 500;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'GMarketSans';
+        src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff');
+        font-weight: 700;
+        font-display: swap;
+    }
+
     /* 폰트 적용 유틸리티 클래스 */
     .font-onestore {
       font-family: 'OneStoreMobileGothicTitleFont', sans-serif !important;
@@ -39,6 +59,10 @@
 
     .font-nostalgic {
       font-family: 'NostalgicPoliceVibe', sans-serif !important;
+    }
+
+    .font-gmarket {
+      font-family: 'GMarketSans', sans-serif !important;
     }
 
     .font-wikipedia {
@@ -76,9 +100,9 @@
       <div>
         <h1 class="text-lg font-bold text-neutral-900 flex items-center gap-2 flex-wrap">
           위키백과 선거 인포박스 빌더
-          <span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-extrabold tracking-wider">v3.4 UNIFIED</span>
+          <span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-extrabold tracking-wider">v4.1 LAYOUT</span>
         </h1>
-        <p class="text-xs text-neutral-500">JSON 저장/백업 • 후보 상세 정보 입력란 100% 동적 가변 관리기 적용</p>
+        <p class="text-xs text-neutral-500">국민투표 지원 고증 강화판 • 인포박스 실시간 너비 제어 엔진 탑재</p>
       </div>
     </div>
 
@@ -101,6 +125,9 @@
         <button onclick="changePreviewFont('wikipedia')" id="btn-font-wikipedia" class="font-tab text-[11px] bg-white border border-neutral-300 text-neutral-700 font-semibold px-2 py-1 rounded shadow-sm transition active:scale-95">
           🌐 위키 기본
         </button>
+        <button onclick="changePreviewFont('gmarket')" id="btn-font-gmarket" class="font-tab text-[11px] bg-neutral-100 text-neutral-500 font-semibold px-2 py-1 rounded transition active:scale-95">
+          🏷️ G마켓 산스
+        </button>
         <button onclick="changePreviewFont('onestore')" id="btn-font-onestore" class="font-tab text-[11px] bg-neutral-100 text-neutral-500 font-semibold px-2 py-1 rounded transition active:scale-95">
           📱 ONE 모바일고딕
         </button>
@@ -117,14 +144,17 @@
     <div class="flex items-center gap-1.5 flex-wrap">
       <span class="text-xs font-bold text-neutral-600">📷 실물 한글화 프리셋:</span>
       <div class="flex gap-1 flex-wrap">
+        <button onclick="loadPreset('ko_referendum_quebec_1995')" class="text-xs bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold px-2 py-1.5 rounded transition">
+          🗳️ '95 퀘벡 독립투표
+        </button>
+        <button onclick="loadPreset('ko_referendum_vietnam_1955')" class="text-xs bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-bold px-2 py-1.5 rounded transition">
+          👑 '55 베트남 국체투표
+        </button>
         <button onclick="loadPreset('ko_local_2026')" class="text-xs bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold px-2 py-1.5 rounded transition">
           🗳️ '26 지방선거
         </button>
         <button onclick="loadPreset('ko_leg_2024')" class="text-xs bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold px-2 py-1.5 rounded transition">
           🏛️ '24 총선
-        </button>
-        <button onclick="loadPreset('ko_next_leg_2028')" class="text-xs bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-bold px-2 py-1.5 rounded transition">
-          📊 '28 차기총선
         </button>
         <button onclick="loadPreset('ko_pres_2025')" class="text-xs bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold px-2 py-1.5 rounded transition">
           👤 '25 대선
@@ -146,7 +176,7 @@
             📝 1. 기본 설정
           </button>
           <button id="tab-btn-candidates" onclick="switchEditorTab('candidates')" class="flex-1 py-3 px-1 text-center transition-all border-b-2 border-transparent text-neutral-500 hover:text-neutral-800">
-            👥 2. 후보/정당 설정
+            👥 <span id="candidate-tab-name-header">2. 후보/정당 설정</span>
           </button>
           <button id="tab-btn-outcome" onclick="switchEditorTab('outcome')" class="flex-1 py-3 px-1 text-center transition-all border-b-2 border-transparent text-neutral-500 hover:text-neutral-800">
             🗺️ 3. 지도 및 결과
@@ -162,44 +192,45 @@
                 선거 기본 메타데이터
               </h3>
               <!-- 선거 형태 변경 -->
-              <select id="input-electionType" onchange="changeElectionType(this.value)" class="text-xs bg-neutral-100 border border-neutral-300 font-bold rounded p-1 text-neutral-700">
+              <select id="input-electionType" onchange="changeElectionType(this.value)" class="text-xs bg-neutral-100 border border-neutral-300 font-bold rounded p-1 text-neutral-700 focus:ring-1 focus:ring-blue-500">
                 <option value="presidential">대통령 선거 양식</option>
                 <option value="legislative">국회의원 선거 양식</option>
                 <option value="local">지방선거 양식</option>
                 <option value="next_legislative">차기 의원선거(의석수표)</option>
+                <option value="referendum">국민투표 양식</option>
               </select>
             </div>
 
             <div class="space-y-3">
               <div>
                 <label class="block text-xs font-bold text-neutral-600 mb-1">선거 공식 명칭</label>
-                <input type="text" id="input-electionName" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition" placeholder="예: 2026년 제9회 전국동시지방선거">
+                <input type="text" id="input-electionName" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition" placeholder="예: 1995년 퀘벡 독립 국민투표">
               </div>
               
               <div>
-                <label class="block text-xs font-bold text-neutral-600 mb-1">국기 이미지 주소 (위키 파일 주소 권장)</label>
-                <input type="text" id="input-flagImage" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition" placeholder="예: https://.../Flag_of_South_Korea.svg.png">
+                <label class="block text-xs font-bold text-neutral-600 mb-1">국기/문장 이미지 주소 (위키 파일 주소 권장)</label>
+                <input type="text" id="input-flagImage" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition" placeholder="예: https://.../Flag_of_Quebec.svg.png">
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs font-bold text-neutral-600 mb-1">이전 선거 연도</label>
-                  <input type="text" id="input-beforeElectionYear" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none" placeholder="예: 2022">
+                  <input type="text" id="input-beforeElectionYear" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none" placeholder="예: 1980">
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-neutral-600 mb-1">차기 선거 연도</label>
-                  <input type="text" id="input-afterElectionYear" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none" placeholder="예: 2030">
+                  <input type="text" id="input-afterElectionYear" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none" placeholder="예: 2010">
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs font-bold text-neutral-600 mb-1">선거일 (정중앙 출력)</label>
-                  <input type="text" id="input-electionDate" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none" placeholder="예: 2026년 6월 3일">
+                  <input type="text" id="input-electionDate" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none" placeholder="예: 1995년 10월 30일">
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-neutral-600 mb-1">임기 공직 명칭</label>
-                  <input type="text" id="input-title" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none" placeholder="예: 지방 정부">
+                  <label class="block text-xs font-bold text-neutral-600 mb-1">임기 공직/관할 명칭</label>
+                  <input type="text" id="input-title" class="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none" placeholder="예: 주정부">
                 </div>
               </div>
 
@@ -207,24 +238,24 @@
               <div class="p-3 bg-neutral-50 rounded border border-neutral-200 space-y-2">
                 <span class="block text-xs font-bold text-neutral-700">📌 선거 추가 통계 정보 (마크업 지원)</span>
                 <div>
-                  <label class="block text-[10px] font-bold text-neutral-500">선거 의석 정보 등 자유 주석 (줄바꿈 가능)</label>
-                  <textarea id="input-turnoutDetails" rows="2" class="w-full p-2 border border-neutral-300 rounded text-xs focus:outline-none" placeholder="예: '''16개 광역단체장'''&#10;'''933명 광역의원'''"></textarea>
+                  <label class="block text-[10px] font-bold text-neutral-500" id="label-turnoutDetails">투표 주제 등의 주요 정보 주석</label>
+                  <textarea id="input-turnoutDetails" rows="2" class="w-full p-2 border border-neutral-300 rounded text-xs focus:outline-none" placeholder="예: 퀘벡 주 헌법적 주권국 지위 부여 찬반 여부"></textarea>
                 </div>
                 <div class="grid grid-cols-2 gap-2 pb-2">
                   <div>
                     <label class="block text-[10px] font-bold text-neutral-500">총 선거인수(Registered)</label>
-                    <input type="text" id="input-registeredVoters" class="w-full p-1.5 border border-neutral-300 rounded text-xs" placeholder="예: 34,079,860">
+                    <input type="text" id="input-registeredVoters" class="w-full p-1.5 border border-neutral-300 rounded text-xs" placeholder="예: 5,087,009">
                   </div>
                   <div>
                     <label class="block text-[10px] font-bold text-neutral-500">투표율 정보(Turnout)</label>
-                    <input type="text" id="input-turnoutText" class="w-full p-1.5 border border-neutral-300 rounded text-xs" placeholder="예: '''61.0%''' ({{increase}} 10.1pp)">
+                    <input type="text" id="input-turnoutText" class="w-full p-1.5 border border-neutral-300 rounded text-xs" placeholder="예: '''93.52%''' ({{increase}} 14.1pp)">
                   </div>
                 </div>
 
                 <!-- 실시간 사용자 정의 공통 추가 정보 슬롯 -->
                 <div class="border-t border-neutral-200 pt-2.5">
                   <div class="flex justify-between items-center mb-1.5">
-                    <span class="block text-[11px] font-bold text-neutral-700">📊 사용자 정의 공통 추가 정보 (행 자유 추가)</span>
+                    <span class="block text-[11px] font-bold text-neutral-700">📊 사용자 정의 공통 추가 정보</span>
                     <button onclick="addCustomStat()" class="text-[10px] bg-neutral-800 hover:bg-neutral-900 text-white font-bold px-2 py-1 rounded transition">
                       + 통계 행 추가
                     </button>
@@ -240,30 +271,36 @@
 
             <div class="pt-3 flex justify-end">
               <button onclick="switchEditorTab('candidates')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 px-4 rounded transition">
-                다음 단계: 후보/정당 정보 관리 →
+                다음 단계로 넘어가기 →
               </button>
             </div>
           </div>
 
-          <!-- 탭 2: 후보/정당 라인업 설정 -->
+          <!-- 탭 2: 후보/정당 설정 OR 국민투표 질문 및 결과 설정 -->
           <div id="editor-section-candidates" class="space-y-4 hidden">
             <div class="flex justify-between items-center border-b border-neutral-100 pb-2">
-              <h3 class="font-bold text-neutral-900 text-sm flex items-center gap-1.5">
+              <h3 class="font-bold text-neutral-900 text-sm flex items-center gap-1.5" id="candidates-section-title">
                 <span class="w-2.5 h-2.5 bg-blue-600 rounded-full inline-block"></span>
                 후보자 및 정당 목록 편집
               </h3>
-              <button onclick="addNewCandidate()" class="bg-neutral-800 hover:bg-neutral-900 text-white font-bold text-xs py-1.5 px-3 rounded flex items-center gap-1 transition">
-                <span>+</span> 후보 추가
+              <button id="btn-add-candidate" onclick="addNewCandidate()" class="bg-neutral-800 hover:bg-neutral-900 text-white font-bold text-xs py-1.5 px-3 rounded flex items-center gap-1 transition">
+                <span>+</span> 추가
               </button>
             </div>
 
-            <!-- 후보자 탭 선택 영역 -->
+            <!-- 국민투표일 때만 활성화되는 전용 질문 영역 -->
+            <div id="referendum-question-area" class="p-3 bg-indigo-50 border border-indigo-100 rounded-lg space-y-1.5 hidden">
+              <label class="block text-xs font-bold text-indigo-900">🗳️ 국민투표 공식 질의문 (Question)</label>
+              <textarea id="input-referendumQuestion" oninput="updateReferendumQuestion(this.value)" rows="3" class="w-full p-2 border border-indigo-200 rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400" placeholder="위첨자(^), 이탤릭 등의 위키 마크업을 지원합니다."></textarea>
+            </div>
+
+            <!-- 일반 선거: 후보자 탭 선택 영역 -->
             <div class="flex gap-1 overflow-x-auto pb-1.5 border-b border-neutral-100 scrollbar-thin" id="candidate-tabs-list">
               <!-- JS 렌더링 -->
             </div>
 
-            <!-- 현재 선택 후보자 디테일 편집창 -->
-            <div class="bg-neutral-50 rounded-lg p-4 border border-neutral-200 space-y-4 relative">
+            <!-- 현재 선택 후보자 디테일 편집창 (일반 선거용) -->
+            <div id="candidate-detail-editor-card" class="bg-neutral-50 rounded-lg p-4 border border-neutral-200 space-y-4 relative">
               <button onclick="removeActiveCandidate()" class="absolute top-3 right-3 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded text-[11px] font-bold transition">
                 ✖ 후보 삭제
               </button>
@@ -292,10 +329,10 @@
                 </div>
               </div>
 
-              <!-- [대격변 통합 패치] 후보자 상세 정보 필드 구성 양식 관리지대 -->
+              <!-- 후보자 상세 정보 필드 구성 양식 관리지대 -->
               <div class="p-3 bg-neutral-100 rounded-lg border border-neutral-200 space-y-3">
                 <div class="flex justify-between items-center border-b border-neutral-300 pb-1.5">
-                  <span class="block text-xs font-bold text-neutral-700">📋 후보 정보 필드 구성 양식 (삭제/추가 가능)</span>
+                  <span class="block text-xs font-bold text-neutral-700">📋 후보 정보 필드 구성 양식</span>
                   <button onclick="addCandidateField()" class="text-[10px] bg-neutral-800 hover:bg-neutral-900 text-white font-bold px-2 py-1 rounded transition">
                     + 새 필드 추가
                   </button>
@@ -315,6 +352,19 @@
                 </div>
               </div>
 
+            </div>
+
+            <!-- 국민투표: 선택지 결과 테이블 편집창 (국민투표 활성화시에만 노출) -->
+            <div id="referendum-choices-editor-card" class="bg-neutral-50 rounded-lg p-4 border border-neutral-200 space-y-4 hidden">
+              <div class="flex justify-between items-center border-b border-neutral-200 pb-2">
+                <span class="block text-xs font-bold text-neutral-700">📊 국민투표 선택지 / 결과 데이터 관리</span>
+                <button onclick="addReferendumChoice()" class="text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2 py-1 rounded transition">
+                  + 결과 행 추가
+                </button>
+              </div>
+              <div id="referendum-choices-list" class="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+                <!-- JS 동적 생성 -->
+              </div>
             </div>
 
             <!-- 하단 네비게이션 버튼 -->
@@ -338,43 +388,39 @@
             </div>
 
             <div class="space-y-3">
-              <div class="p-3 bg-neutral-50 rounded border border-neutral-200 space-y-2">
-                <span class="block text-xs font-bold text-neutral-700">선거 전 상태 (임기 소유자)</span>
+              <div id="outcome-prev-next-card" class="p-3 bg-neutral-50 rounded border border-neutral-200 space-y-2">
+                <span class="block text-xs font-bold text-neutral-700">선거 전후 상태 (임기 배후 정보)</span>
                 <div class="grid grid-cols-2 gap-2">
                   <div>
-                    <label class="block text-[10px] font-bold text-neutral-500">전임자 인물명</label>
+                    <label class="block text-[10px] font-bold text-neutral-500">이전 상태 / 인물</label>
                     <input type="text" id="input-beforeElection" class="w-full px-2 py-1 border border-neutral-300 rounded text-xs bg-white">
                   </div>
                   <div>
-                    <label class="block text-[10px] font-bold text-neutral-500">소속 정당</label>
+                    <label class="block text-[10px] font-bold text-neutral-500">이전 연계 조직 / 정당</label>
                     <input type="text" id="input-beforeParty" class="w-full px-2 py-1 border border-neutral-300 rounded text-xs bg-white">
                   </div>
                 </div>
-              </div>
-
-              <div class="p-3 bg-emerald-50 rounded border border-emerald-200 space-y-2">
-                <span class="block text-xs font-bold text-emerald-800">선거 후 상태 (당선인)</span>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-2 gap-2 pt-1 border-t border-dashed border-neutral-200">
                   <div>
-                    <label class="block text-[10px] font-bold text-emerald-700">당선자 인물명</label>
-                    <input type="text" id="input-afterElection" class="w-full px-2 py-1 border border-emerald-300 rounded text-xs bg-white">
+                    <label class="block text-[10px] font-bold text-neutral-500">이후 상태 / 인물</label>
+                    <input type="text" id="input-afterElection" class="w-full px-2 py-1 border border-neutral-300 rounded text-xs bg-white">
                   </div>
                   <div>
-                    <label class="block text-[10px] font-bold text-emerald-700">소속 정당</label>
-                    <input type="text" id="input-afterParty" class="w-full px-2 py-1 border border-emerald-300 rounded text-xs bg-white">
+                    <label class="block text-[10px] font-bold text-neutral-500">이후 연계 조직 / 정당</label>
+                    <input type="text" id="input-afterParty" class="w-full px-2 py-1 border border-neutral-300 rounded text-xs bg-white">
                   </div>
                 </div>
               </div>
 
               <div class="p-3 bg-neutral-50 rounded border border-neutral-200 space-y-2">
-                <span class="block text-xs font-bold text-neutral-700">지표 지도 영역</span>
+                <span class="block text-xs font-bold text-neutral-700">지표 지도 영역 (국민투표 및 일반선거 공통 지원)</span>
                 <div>
                   <label class="block text-[10px] font-bold text-neutral-500 mb-1">지도 이미지 주소</label>
                   <input type="text" id="input-mapImage" class="w-full px-2.5 py-1.5 border border-neutral-300 rounded text-xs bg-white font-mono" placeholder="지도로 출력할 완전한 URL 경로">
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-neutral-500 mb-1">지도 범례 및 설명 주석</label>
-                  <textarea id="input-mapCaption" rows="2" class="w-full px-2.5 py-1.5 border border-neutral-300 rounded text-xs bg-white resize-none" placeholder="지도 하단에 들어갈 설명문구"></textarea>
+                  <textarea id="input-mapCaption" rows="2" class="w-full px-2.5 py-1.5 border border-neutral-300 rounded text-xs bg-white resize-none" placeholder="지도 하단에 들어갈 범례 및 설명문"></textarea>
                 </div>
               </div>
             </div>
@@ -439,8 +485,19 @@
           <span class="text-xs text-neutral-400 italic">Scale: 100% Real Standard Desktop</span>
         </div>
 
+        <!-- [신규 및 요청 핵심 패치] 인포박스 가로 너비 실시간 연동 컨트롤러 바 (PC 타깃 최적화) -->
+        <div class="w-full max-w-[320px] mb-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-neutral-50 p-2.5 rounded-lg border border-neutral-200 shadow-sm" id="infobox-width-controller">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-bold text-neutral-700">📏 가로 너비 (PC):</span>
+            <input type="number" id="input-previewWidth" min="260" max="600" step="5" value="320" oninput="changePreviewWidth(this.value)" class="w-16 px-1.5 py-1 text-xs text-center font-bold text-neutral-800 bg-white border border-neutral-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm">
+            <span class="text-xs font-semibold text-neutral-400">px</span>
+          </div>
+          <!-- 보조 슬라이더 연동 -->
+          <input type="range" id="input-previewWidthRange" min="260" max="600" step="5" value="320" oninput="changePreviewWidth(this.value)" class="flex-1 h-1.5 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+        </div>
+
         <!-- 위키백과 인포박스 렌더 기어 -->
-        <div id="wikipedia-preview-box" class="w-full max-w-[320px] bg-[#f8f9fa] text-[#202122] border border-[#a2a9b1] text-[13px] font-wikipedia shadow-sm leading-relaxed" style="box-sizing: border-box;">
+        <div id="wikipedia-preview-box" class="w-full bg-[#f8f9fa] text-[#202122] border border-[#a2a9b1] text-[13px] font-wikipedia shadow-sm leading-relaxed" style="box-sizing: border-box; max-width: 320px;">
           
           <!-- 선거 헤더명 -->
           <div id="preview-electionName" class="bg-[#ced4da] font-bold text-base py-1.5 text-center leading-snug border-b border-[#a2a9b1]">
@@ -448,7 +505,7 @@
           </div>
 
           <!-- 국기 이미지 노출 레이아웃 -->
-          <div id="preview-flag-container" class="py-2.5 flex justify-center bg-white border-b border-neutral-200">
+          <div id="preview-flag-container" class="py-2.5 flex justify-center bg-white border-b border-[#a2a9b1]">
             <img id="preview-flagImage" src="" alt="국기" onerror="handleFlagError(this)" class="max-h-[30px] w-auto object-contain">
           </div>
 
@@ -465,6 +522,11 @@
             <div id="preview-voters-turnout" class="text-[11px] text-neutral-500 font-semibold space-y-0.5 mt-1 border-t border-dashed border-neutral-100 pt-1"></div>
           </div>
 
+          <!-- [신규 국민투표 특화] 투표 질문 섹션 -->
+          <div id="preview-referendum-question-container" class="p-3 bg-white border-b border-[#a2a9b1] text-center font-medium leading-relaxed text-[#202122] text-xs hidden">
+            <!-- 질문 기입 -->
+          </div>
+
           <!-- 후보/정당 가로 그리드 및 의석수 테이블 렌더링 구역 -->
           <div id="preview-candidates-container" class="p-1 border-b border-[#a2a9b1] bg-white overflow-x-auto">
             <!-- 수동 JS 렌더링 구조 -->
@@ -475,13 +537,14 @@
             <div class="mx-auto max-w-full overflow-hidden flex items-center justify-center p-1 border border-[#e8ecef] bg-[#f8f9fa]">
               <img id="preview-map-image" src="" alt="선거 지도" onerror="handleMapError(this)" class="max-h-[190px] w-auto object-contain">
             </div>
-            <p id="preview-map-caption" class="text-[11px] text-neutral-500 mt-1.5 leading-snug px-1 text-left">
+            <!-- 요청 사항: 지도 주석 가운데 정렬 및 글자색 검정색 변경 -->
+            <p id="preview-map-caption" class="text-[11px] text-black text-center font-medium mt-1.5 leading-snug px-1">
               설명
             </p>
           </div>
 
           <!-- 하단 전임/후임 풋 링크 배너 -->
-          <div class="bg-[#f8f9fa] py-2 px-2 text-xs">
+          <div id="preview-prev-next-banner" class="bg-[#f8f9fa] py-2 px-2 text-xs">
             <div class="flex justify-between items-stretch gap-1">
               
               <!-- 전임 정보 -->
@@ -507,8 +570,19 @@
 
         </div>
 
-        <div class="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200 max-w-[480px] text-xs text-yellow-800 leading-relaxed">
-          💡 <strong>글꼴 전환 완료:</strong> 지정된 헤더의 폰트 탭을 통해 위키백과 내 서체를 언제든지 실시간으로 미리보기 변경할 수 있습니다. 폰트 변경 사항은 현재 제작 중인 위키 미리보기 상자(`preview-box`)에만 안정적으로 한정 반영됩니다.
+        <!-- 실시간 마크업 덤프 보드 -->
+        <div class="w-full mt-6 space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-neutral-700">💾 미디어위키(MediaWiki) 소스코드 매핑 결과</span>
+            <div class="flex gap-1.5">
+              <button onclick="changeOutputLanguage('ko')" id="btn-lang-ko" class="px-2.5 py-1 text-[11px] rounded transition bg-neutral-700 text-white font-bold shadow">KO 한글화 양식</button>
+              <button onclick="changeOutputLanguage('en')" id="btn-lang-en" class="px-2.5 py-1 text-[11px] rounded transition text-neutral-400 font-bold">EN 글로벌 양식</button>
+            </div>
+          </div>
+          <textarea id="markup-output" readonly rows="7" class="w-full p-3 bg-neutral-900 text-emerald-400 font-mono text-xs rounded-lg shadow-inner focus:outline-none focus:ring-1 focus:ring-neutral-700 resize-none leading-relaxed"></textarea>
+          <button onclick="copyToClipboard()" class="w-full py-2.5 bg-neutral-800 hover:bg-neutral-900 text-white font-bold text-xs rounded-lg transition active:scale-[0.98] shadow-sm">
+            📋 클립보드에 마크업 복사하기
+          </button>
         </div>
 
       </div>
@@ -537,7 +611,7 @@
     window.handleFlagError = function(img) {
       img.outerHTML = `
         <div class="px-3 py-1 bg-neutral-50 border border-neutral-200 rounded text-[10px] font-semibold text-neutral-500 flex items-center gap-1 select-none">
-          🏳️ 국기 이미지 없음 (링크 확인)
+          🏳️ 이미지 없음
         </div>
       `;
     };
@@ -591,6 +665,68 @@
 
     // 1. 위키 데이터 프리셋 정의
     const PRESETS = {
+      ko_referendum_quebec_1995: {
+        electionType: "referendum",
+        electionName: "1995년 퀘벡 독립 국민투표",
+        flagImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Flag_of_Quebec.svg/50px-Flag_of_Quebec.svg.png",
+        beforeElectionYear: "1980",
+        afterElectionYear: "",
+        electionDate: "1995년 10월 30일",
+        title: "독립 여부",
+        previewWidth: 320, // 기본 고증 너비 설정
+        turnoutDetails: "퀘벡 주 헌법적 주권국 지위 부여 찬반 여부",
+        registeredVoters: "5,087,009",
+        turnoutText: "4,757,509\n'''93.52%''' ({{increase}} 14.1pp)",
+        mapImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Quebec_referendum_1995_map.svg/350px-Quebec_referendum_1995_map.svg.png",
+        mapCaption: "지역구별 찬반 투표 결과.\n청색 계열은 '찬성(Yes)' 과반수, 적색 계열은 '반대(No)' 과반수를 나타냅니다. 색이 짙을수록 더 높은 과반 비율을 의미합니다.",
+        beforeElection: "1980년 국민투표",
+        beforeParty: "부결 (59.56%)",
+        afterElection: "향후 독립안",
+        afterParty: "추진 미정",
+        customStats: [
+          { id: "qs1", label: "결과 결정 방식", value: "단판 다수결제" }
+        ],
+        referendumQuestion: "Do you agree that Quebec should become sovereign after having made a formal offer to Canada for a new economic and political partnership within the scope of the bill respecting the future of Quebec and of the agreement signed on June 12, 1995?",
+        referendumChoices: [
+          { id: "rc1", label: "✔️ 찬성 (Yes)", votes: "2,308,360", percentage: "49.42%" },
+          { id: "rc2", label: "❌ 반대 (No)", votes: "2,362,648", percentage: "50.58%" },
+          { id: "rc3", label: "유효 투표수 (Valid)", votes: "4,671,008", percentage: "98.18%" },
+          { id: "rc4", label: "무효 및 기권표 (Invalid/Blank)", votes: "86,501", percentage: "1.82%" },
+          { id: "rc5", label: "총 투표수 (Total)", votes: "4,757,509", percentage: "100.00%" }
+        ],
+        candidates: []
+      },
+      ko_referendum_vietnam_1955: {
+        electionType: "referendum",
+        electionName: "1955년 베트남 국체 국민투표",
+        flagImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Flag_of_South_Vietnam.svg/50px-Flag_of_South_Vietnam.svg.png",
+        beforeElectionYear: "",
+        afterElectionYear: "",
+        electionDate: "1955년 10월 23일",
+        title: "정치 체제",
+        previewWidth: 320,
+        turnoutDetails: "베트남국의 군주제 유지 또는 공화제 전환 결정 투표",
+        registeredVoters: "5,335,668",
+        turnoutText: "5,784,752\n'''108.42%''' (초과 투표 발생)",
+        mapImage: "",
+        mapCaption: "사이공 특별지구 및 지방행정구역 전체에서 공화정 수립안이 압도적인 표차로 가결되었습니다.",
+        beforeElection: "베트남국 (군주제)",
+        beforeParty: "바오다이 황제 소속",
+        afterElection: "베트남 공화국 (공화제)",
+        afterParty: "고딘디엠 대통령 소속",
+        customStats: [
+          { id: "v_qs1", label: "투표 비정상 지수", value: "'''초과 투표 108% 발생'''" }
+        ],
+        referendumQuestion: "베트남은 공화국이 되어야 합니까, 아니면 군주제로 남아야 합니까?\n(Should the State of Vietnam become a Republic or remain a Monarchy?)",
+        referendumChoices: [
+          { id: "v_rc1", label: "공화정 수립 (바오다이 폐위 및 고딘디엠 옹립)", votes: "5,721,735", percentage: "98.91%" },
+          { id: "v_rc2", label: "군주제 유지 (바오다이 황제 지지)", votes: "63,017", percentage: "1.09%" },
+          { id: "v_rc3", label: "유효 투표수 (Valid)", votes: "5,784,752", percentage: "100.00%" },
+          { id: "v_rc4", label: "무효 및 백지표 (Invalid/Blank)", votes: "0", percentage: "0.00%" },
+          { id: "v_rc5", label: "총 투표수 (Total)", votes: "5,784,752", percentage: "100.00%" }
+        ],
+        candidates: []
+      },
       ko_local_2026: {
         electionType: "local",
         electionName: "2026년 제9회 전국동시지방선거",
@@ -599,6 +735,7 @@
         afterElectionYear: "2030",
         electionDate: "2026년 6월 3일",
         title: "지방 정부",
+        previewWidth: 320,
         turnoutDetails: "'''17개 광역단체장'''\n'''872명 광역의원'''\n'''226개 기초단체장'''\n'''2,988명 기초의원'''",
         registeredVoters: "44,307,986",
         turnoutText: "27,253,457\n'''61.0%''' ({{increase}} 10.1pp)''^[1]''",
@@ -664,6 +801,7 @@
         afterElectionYear: "2028",
         electionDate: "2024년 4월 10일",
         title: "국회",
+        previewWidth: 320,
         turnoutDetails: "'''국회의원 300석 전체'''\n원내 과반수 기준: '''151석'''",
         registeredVoters: "44,280,011",
         turnoutText: "지역구: '''66.97%''' ({{increase}} 0.77pp)\n비례대표: '''66.99%''' ({{increase}} 0.78pp)",
@@ -724,38 +862,6 @@
           }
         ]
       },
-      ko_next_leg_2028: {
-        electionType: "next_legislative",
-        electionName: "대한민국 제23대 국회의원 선거",
-        flagImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Flag_of_South_Korea.svg/50px-Flag_of_South_Korea.svg.png",
-        beforeElectionYear: "2024",
-        afterElectionYear: "2032",
-        electionDate: "늦어도 2028년 4월 12일 이전",
-        title: "국회",
-        turnoutDetails: "'''국회의원 300석 전체'''\n원내 과반수 기준: '''151석'''",
-        registeredVoters: "",
-        turnoutText: "",
-        mapImage: "",
-        mapCaption: "",
-        beforeElection: "우원식",
-        beforeParty: "더불어민주당",
-        afterElection: "미정",
-        afterParty: "미정",
-        customStats: [],
-        candidateFieldsConfig: [
-          { id: "seatsWon", label: "현재 의석", type: "text" }
-        ],
-        candidates: [
-          { id: "1", name: "정청래", party: "더불어민주당", color: "#004EA2", fieldValues: { seatsWon: "161" } },
-          { id: "2", name: "장동혁", party: "국민의힘", color: "#E61E2B", fieldValues: { seatsWon: "107" } },
-          { id: "3", name: "조국", party: "조국혁신당", color: "#0032A0", fieldValues: { seatsWon: "12" } },
-          { id: "4", name: "김재연", party: "진보당", color: "#D6001C", fieldValues: { seatsWon: "4" } },
-          { id: "5", name: "이준석", party: "개혁신당", color: "#FF7016", fieldValues: { seatsWon: "3" } },
-          { id: "6", name: "용혜인", party: "기본소득당", color: "#00CCD4", fieldValues: { seatsWon: "1" } },
-          { id: "7", name: "한창민", party: "사회민주당", color: "#F75000", fieldValues: { seatsWon: "1" } },
-          { id: "8", name: "--", party: "무소속''^[a]''", color: "#808080", fieldValues: { seatsWon: "6" } }
-        ]
-      },
       ko_pres_2025: {
         electionType: "presidential",
         electionName: "2025년 대한민국 제21대 대통령 선거",
@@ -764,6 +870,7 @@
         afterElectionYear: "2030",
         electionDate: "2025년 6월 3일",
         title: "대통령",
+        previewWidth: 320,
         turnoutDetails: "공표 여론조사 집계치 기준",
         registeredVoters: "44,391,871",
         turnoutText: "'''79.38%''' ({{increase}} 2.30 pp)",
@@ -826,7 +933,7 @@
 
     // 애플리케이션 라이브 상태 데이터
     let state = {
-      electionType: "presidential",
+      electionType: "referendum",
       electionName: "",
       country: "대한민국",
       electionDate: "",
@@ -839,6 +946,7 @@
       turnoutText: "",
       mapImage: "",
       mapCaption: "",
+      previewWidth: 320, // 인포박스 조절용 상태 가치 추가
       title: "",
       beforeElection: "",
       beforeParty: "",
@@ -846,7 +954,9 @@
       afterParty: "",
       candidates: [],
       customStats: [], // 선거 전체 추가 공통 통계
-      candidateFieldsConfig: [], // [핵심] 100% 동적 후보자 정보 필드 구성 양식
+      candidateFieldsConfig: [], // 일반선거 가변 상세 필드
+      referendumQuestion: "", // 국민투표 공식 질문
+      referendumChoices: [], // 국민투표 선택지 리스트
       editingCandidateId: "1",
       activeTab: "meta",
       outputLang: "ko",
@@ -855,8 +965,8 @@
 
     // 2. 초기 기동 함수
     window.onload = function() {
-      // 기본값으로 2026 지방선거 탑재
-      loadPresetData(PRESETS.ko_local_2026);
+      // 기본값으로 1995년 퀘벡 국민투표 고증 데이터 탑재
+      loadPresetData(PRESETS.ko_referendum_quebec_1995);
       
       // 포커스 소실 방지를 위한 순수 인풋 필드 실시간 이벤트 바인딩
       bindInputEvents();
@@ -947,14 +1057,54 @@
       }
     }
 
+    // [신규 핵심] 인포박스 가로 너비 동적 조절기
+    function changePreviewWidth(val) {
+      let width = parseInt(val);
+      if (isNaN(width) || width < 260) width = 260;
+      if (width > 600) width = 600;
+
+      state.previewWidth = width;
+
+      // 입력 기기 양방향 연동
+      setElementValue("input-previewWidth", width);
+      setElementValue("input-previewWidthRange", width);
+
+      // DOM 미리보기 상자 너비 및 연관 컨트롤러 레이아웃 너비 조절
+      const previewBox = document.getElementById("wikipedia-preview-box");
+      const controllerBox = document.getElementById("infobox-width-controller");
+
+      if (previewBox) {
+        previewBox.style.maxWidth = `${width}px`;
+      }
+      if (controllerBox) {
+        controllerBox.style.maxWidth = `${width}px`;
+      }
+
+      updateMarkup();
+    }
+
     // 선거 유형 변경 핸들러
     function changeElectionType(type) {
       state.electionType = type;
       toggleElectionTypeUI();
       // 기존 스키마에 부합하도록 필드 재구축 유도
       autoConfigFieldsForType(type);
+      
+      // 국민투표일 때 기본 데이터 생성
+      if (type === "referendum" && (!state.referendumChoices || state.referendumChoices.length === 0)) {
+        state.referendumChoices = [
+          { id: "rc_1", label: "✔️ 찬성 (Yes)", votes: "2,308,360", percentage: "49.42%" },
+          { id: "rc_2", label: "❌ 반대 (No)", votes: "2,362,648", percentage: "50.58%" },
+          { id: "rc_3", label: "유효 투표수 (Valid)", votes: "4,671,008", percentage: "98.18%" },
+          { id: "rc_4", label: "무효 및 기권표 (Invalid/Blank)", votes: "86,501", percentage: "1.82%" },
+          { id: "rc_5", label: "총 투표수 (Total)", votes: "4,757,509", percentage: "100.00%" }
+        ];
+        state.referendumQuestion = "여기에 국민투표 공식 질의문을 기입하세요.";
+      }
+
       renderCandidateFieldsConfigForm();
       renderCandidateFieldValuesForm();
+      renderReferendumChoicesForm();
       updatePreview();
       updateMarkup();
     }
@@ -987,6 +1137,8 @@
         state.candidateFieldsConfig = [
           { id: "seatsWon", label: "현재 의석", type: "text" }
         ];
+      } else if (type === "referendum") {
+        state.candidateFieldsConfig = [];
       } else {
         // presidential
         state.candidateFieldsConfig = [
@@ -999,7 +1151,40 @@
 
     // 선거 유형별 세부 입력창 토글
     function toggleElectionTypeUI() {
-      // 이제 모든 수치 구성이 동적 필드 영역으로 일원화되었으므로 고정 스위칭 UI 코드를 심플하게 정제합니다.
+      const headerTitle = document.getElementById("candidate-tab-name-header");
+      const sectionTitle = document.getElementById("candidates-section-title");
+      const candBtn = document.getElementById("btn-add-candidate");
+      const candTabs = document.getElementById("candidate-tabs-list");
+      const candEditor = document.getElementById("candidate-detail-editor-card");
+      
+      const referendumQuestionArea = document.getElementById("referendum-question-area");
+      const referendumChoicesEditor = document.getElementById("referendum-choices-editor-card");
+
+      const labelTurnoutDetails = document.getElementById("label-turnoutDetails");
+
+      if (state.electionType === "referendum") {
+        if (headerTitle) headerTitle.innerText = "2. 투표 질문 & 결과 설정";
+        if (sectionTitle) sectionTitle.innerHTML = `<span class="w-2.5 h-2.5 bg-indigo-600 rounded-full inline-block"></span> 국민투표 질문 및 결과 데이터 설정`;
+        if (candBtn) candBtn.classList.add("hidden");
+        if (candTabs) candTabs.classList.add("hidden");
+        if (candEditor) candEditor.classList.add("hidden");
+
+        if (referendumQuestionArea) referendumQuestionArea.classList.remove("hidden");
+        if (referendumChoicesEditor) referendumChoicesEditor.classList.remove("hidden");
+
+        if (labelTurnoutDetails) labelTurnoutDetails.innerText = "국민투표 주제 등에 관한 정보 기입";
+      } else {
+        if (headerTitle) headerTitle.innerText = "2. 후보/정당 설정";
+        if (sectionTitle) sectionTitle.innerHTML = `<span class="w-2.5 h-2.5 bg-blue-600 rounded-full inline-block"></span> 후보자 및 정당 목록 편집`;
+        if (candBtn) candBtn.classList.remove("hidden");
+        if (candTabs) candTabs.classList.remove("hidden");
+        if (candEditor) candEditor.classList.remove("hidden");
+
+        if (referendumQuestionArea) referendumQuestionArea.classList.add("hidden");
+        if (referendumChoicesEditor) referendumChoicesEditor.classList.add("hidden");
+
+        if (labelTurnoutDetails) labelTurnoutDetails.innerText = "선거 의석 정보 등 자유 주석 (줄바꿈 가능)";
+      }
     }
 
     // 프리셋 데이터 기입 함수
@@ -1013,6 +1198,11 @@
 
     // 불러온 데이터 구조를 최신 포맷으로 통합 변환하는 고장 안전 가이드 탑재
     function normalizeState(loadedState) {
+      if (loadedState.electionType === "referendum") {
+        if (!loadedState.referendumChoices) loadedState.referendumChoices = [];
+        if (!loadedState.referendumQuestion) loadedState.referendumQuestion = "Do you agree that Quebec should become sovereign...?";
+      }
+
       if (!loadedState.candidateFieldsConfig || loadedState.candidateFieldsConfig.length === 0) {
         if (loadedState.electionType === "legislative") {
           loadedState.candidateFieldsConfig = [
@@ -1040,7 +1230,7 @@
           loadedState.candidateFieldsConfig = [
             { id: "seatsWon", label: "현재 의석", type: "text" }
           ];
-        } else {
+        } else if (loadedState.electionType !== "referendum") {
           loadedState.candidateFieldsConfig = [
             { id: "image", label: "프로필 이미지", type: "image" },
             { id: "votes", label: "득표수", type: "text" },
@@ -1050,11 +1240,13 @@
       }
 
       // 타입 안정화 처리
-      loadedState.candidateFieldsConfig.forEach(cfg => {
-        if (!cfg.type) {
-          cfg.type = (cfg.id === "image" || cfg.label.includes("이미지") || cfg.label.includes("사진")) ? "image" : "text";
-        }
-      });
+      if (loadedState.candidateFieldsConfig) {
+        loadedState.candidateFieldsConfig.forEach(cfg => {
+          if (!cfg.type) {
+            cfg.type = (cfg.id === "image" || cfg.label.includes("이미지") || cfg.label.includes("사진")) ? "image" : "text";
+          }
+        });
+      }
 
       // 후보자 인스턴스의 fieldValues 통합 정상화 분기
       if (loadedState.candidates) {
@@ -1121,6 +1313,7 @@
       state.turnoutText = normalized.turnoutText || "";
       state.mapImage = normalized.mapImage || "";
       state.mapCaption = normalized.mapCaption || "";
+      state.previewWidth = normalized.previewWidth || 320; // 가로 너비 복원
       state.title = normalized.title;
       state.beforeElection = normalized.beforeElection || "";
       state.beforeParty = normalized.beforeParty || "";
@@ -1129,6 +1322,8 @@
       state.customStats = normalized.customStats || [];
       state.candidateFieldsConfig = normalized.candidateFieldsConfig || [];
       state.candidates = normalized.candidates || [];
+      state.referendumQuestion = normalized.referendumQuestion || "";
+      state.referendumChoices = normalized.referendumChoices || [];
       state.editingCandidateId = state.candidates.length > 0 ? state.candidates[0].id : "1";
 
       // 폼 필드값 초기화
@@ -1153,11 +1348,16 @@
       setElementValue("input-mapImage", state.mapImage);
       setElementValue("input-mapCaption", state.mapCaption);
 
-      toggleUSStyleUI();
+      setElementValue("input-referendumQuestion", state.referendumQuestion);
+
+      // 가로 너비 컨트롤 값 동시 동조화
+      changePreviewWidth(state.previewWidth);
+
       toggleElectionTypeUI();
       renderCandidateTabs();
       loadActiveCandidateToForm();
       renderCustomStatsForm();
+      renderReferendumChoicesForm();
       updatePreview();
       updateMarkup();
     }
@@ -1179,11 +1379,6 @@
           }
         }
       });
-    }
-
-    // 미국식 추가인자 컨테이너 감추기/보이기
-    function toggleUSStyleUI() {
-      // 본 버전에서는 필요시 활용될 수 있도록 인프라만 남겨둡니다.
     }
 
     // 후보자 탭 렌더링 세션
@@ -1221,6 +1416,7 @@
       }
     }
 
+    // 탭 구슬 색상 업데이트
     function updateCandidateTabStyling(id, color) {
       const dotElem = document.getElementById(`tab-dot-${id}`);
       if (dotElem) {
@@ -1249,7 +1445,6 @@
       setElementValue("cand-color-picker", cand.color || "#808080");
       setElementValue("cand-color-text", cand.color || "#808080");
 
-      // 100% 동적 후보자 정보 필드 구성 및 수치 인풋 실시간 바인딩 렌더링
       renderCandidateFieldsConfigForm();
       renderCandidateFieldValuesForm();
     }
@@ -1286,7 +1481,7 @@
       triggerToast("새로운 정당/후보자가 등재되었습니다.");
     }
 
-    // [전면 동적 개편] 글로벌 후보 정보 구성 양식 관리자 함수셋
+    // 글로벌 후보 정보 구성 양식 관리자 함수셋
     function addCandidateField() {
       if (!state.candidateFieldsConfig) state.candidateFieldsConfig = [];
       const safeId = "field_" + (typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11));
@@ -1332,7 +1527,6 @@
       if (cand) {
         if (!cand.fieldValues) cand.fieldValues = {};
         cand.fieldValues[fieldId] = val;
-        // 타이핑 포커스 소실 방지를 위해 values-list 폼을 완전히 새로 그리지 않고, 미리보기와 마크업 영역만 부분 업데이트합니다.
         updatePreview();
         updateMarkup();
       }
@@ -1406,6 +1600,70 @@
       triggerToast("라인업에서 성공적으로 제거되었습니다.");
     }
 
+    // [국민투표 전용] 실시간 질문 본문 업데이트 함수
+    function updateReferendumQuestion(val) {
+      state.referendumQuestion = val;
+      updatePreview();
+      updateMarkup();
+    }
+
+    // [국민투표 전용] 선택지 정보 동적 CRUD 함수셋
+    function addReferendumChoice() {
+      if (!state.referendumChoices) state.referendumChoices = [];
+      const safeId = "rc_" + (typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11));
+      state.referendumChoices.push({ id: safeId, label: "새로운 선택지", votes: "0", percentage: "0.00%" });
+      renderReferendumChoicesForm();
+      updatePreview();
+      updateMarkup();
+    }
+
+    function deleteReferendumChoice(id) {
+      if (!state.referendumChoices) return;
+      state.referendumChoices = state.referendumChoices.filter(c => c.id !== id);
+      renderReferendumChoicesForm();
+      updatePreview();
+      updateMarkup();
+    }
+
+    function updateReferendumChoiceData(id, key, val) {
+      if (!state.referendumChoices) return;
+      const choice = state.referendumChoices.find(c => c.id === id);
+      if (choice) {
+        choice[key] = val;
+        updatePreview();
+        updateMarkup();
+      }
+    }
+
+    function renderReferendumChoicesForm() {
+      const container = document.getElementById("referendum-choices-list");
+      if (!container) return;
+      container.innerHTML = "";
+      if (!state.referendumChoices) state.referendumChoices = [];
+
+      state.referendumChoices.forEach(choice => {
+        const div = document.createElement("div");
+        div.className = "p-2.5 bg-white rounded border border-neutral-300 shadow-sm space-y-1.5";
+        div.innerHTML = `
+          <div class="flex justify-between items-center gap-2 border-b border-neutral-100 pb-1">
+            <input type="text" value="${choice.label}" oninput="updateReferendumChoiceData('${choice.id}', 'label', this.value)" class="font-bold text-[11px] text-indigo-900 bg-transparent border-b border-transparent hover:border-neutral-400 focus:border-indigo-500 focus:outline-none w-2/3" placeholder="예: ✔️ 찬성 (Yes)">
+            <button onclick="deleteReferendumChoice('${choice.id}')" class="text-red-500 hover:text-red-700 text-[10px] font-bold bg-red-50 hover:bg-red-100 px-1.5 py-0.5 rounded transition">✖ 행 삭제</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[9px] text-neutral-400 font-bold">투표수 (Votes)</label>
+              <input type="text" value="${choice.votes}" oninput="updateReferendumChoiceData('${choice.id}', 'votes', this.value)" class="w-full p-1 border border-neutral-300 rounded text-xs bg-neutral-50 focus:bg-white focus:outline-none" placeholder="예: 2,308,360">
+            </div>
+            <div>
+              <label class="block text-[9px] text-neutral-400 font-bold">비율 (% 또는 설명)</label>
+              <input type="text" value="${choice.percentage}" oninput="updateReferendumChoiceData('${choice.id}', 'percentage', this.value)" class="w-full p-1 border border-neutral-300 rounded text-xs bg-neutral-50 focus:bg-white focus:outline-none" placeholder="예: 49.42%">
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
     // 사용자 정의 공통 추가 정보 제어 함수군 (포커스 유실 원천 차단형 설계)
     function addCustomStat() {
       if (!state.customStats) state.customStats = [];
@@ -1416,6 +1674,7 @@
       updateMarkup();
     }
 
+    // 공통 정보 통계 삭제
     function deleteCustomStat(id) {
       if (!state.customStats) return;
       state.customStats = state.customStats.filter(s => s.id !== id);
@@ -1424,6 +1683,7 @@
       updateMarkup();
     }
 
+    // 공통 정보 통계 실시간 연계
     function updateCustomStat(id, key, val) {
       if (!state.customStats) return;
       const item = state.customStats.find(s => s.id === id);
@@ -1457,7 +1717,7 @@
       const clone = JSON.parse(JSON.stringify(state));
       delete clone.activeTab;
       
-      const fileName = `${state.electionName ? state.electionName.replace(/\s+/g, '_') : 'election_infobox'}.json`;
+      const fileName = `${state.electionName ? state.electionName.replace(/\s+/g, '_') : 'election_referendum_infobox'}.json`;
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(clone, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
@@ -1481,7 +1741,7 @@
       reader.onload = function(e) {
         try {
           const parsed = JSON.parse(e.target.result);
-          if (!parsed.electionType && !parsed.candidates) {
+          if (!parsed.electionType && !parsed.candidates && !parsed.referendumChoices) {
             throw new Error("유효한 선거 인포박스 빌더 JSON 형식이 아닙니다.");
           }
           
@@ -1557,18 +1817,33 @@
         }
       }
 
-      // 하단 전후임 연계 
+      // 국민투표 질문 영역 분기 처리
+      const questionContainer = document.getElementById("preview-referendum-question-container");
+      if (questionContainer) {
+        if (state.electionType === "referendum" && state.referendumQuestion) {
+          questionContainer.innerHTML = `
+            <div class="p-2 border border-[#a2a9b1] bg-white rounded shadow-sm text-left leading-relaxed text-[#202122] italic font-sans">
+              ${parseWikipediaMarkup(state.referendumQuestion)}
+            </div>
+          `;
+          questionContainer.classList.remove("hidden");
+        } else {
+          questionContainer.classList.add("hidden");
+        }
+      }
+
+      // 하단 전임/후임 연계 
       const beforeTitle = document.getElementById("preview-before-title");
       const beforeElect = document.getElementById("preview-beforeElection");
       const beforeParty = document.getElementById("preview-beforeParty");
-      if (beforeTitle) beforeTitle.innerText = `이전 ${state.title || "공직"}`;
+      if (beforeTitle) beforeTitle.innerText = `이전`;
       if (beforeElect) beforeElect.innerText = state.beforeElection || "공석";
       if (beforeParty) beforeParty.innerText = state.beforeParty || "무소속";
 
       const afterTitle = document.getElementById("preview-after-title");
       const afterElect = document.getElementById("preview-afterElection");
       const afterParty = document.getElementById("preview-afterParty");
-      if (afterTitle) afterTitle.innerText = `차기 ${state.title || "공직"}`;
+      if (afterTitle) afterTitle.innerText = `차기`;
       if (afterElect) afterElect.innerText = state.afterElection || "공석";
       if (afterParty) afterParty.innerText = state.afterParty || "무소속";
 
@@ -1580,7 +1855,8 @@
             <div class="mx-auto max-w-full overflow-hidden flex items-center justify-center p-1 border border-[#e8ecef] bg-neutral-50">
               <img id="preview-map-image" src="${state.mapImage}" alt="선거 지도" onerror="handleMapError(this)" class="max-h-[190px] w-auto object-contain">
             </div>
-            <p id="preview-map-caption" class="text-[11px] text-neutral-500 mt-1.5 leading-snug px-1 text-left">
+            <!-- 요청 사항: 검은색 글씨에 수평 중앙(가운데) 정렬 반영 -->
+            <p id="preview-map-caption" class="text-[11px] text-black text-center font-medium mt-1.5 leading-snug px-1">
               ${parseWikipediaMarkup(state.mapCaption) || ""}
             </p>
           `;
@@ -1596,7 +1872,49 @@
       candidatesContainer.innerHTML = "";
 
       // 유형에 맞춘 특수 렌더링 분기
-      if (state.electionType === "next_legislative") {
+      if (state.electionType === "referendum") {
+        // [국민투표 전용] 정밀 고증 결과 테이블 미리보기 렌더링
+        let tableHtml = `
+          <table class="w-full border-collapse text-xs text-left" style="line-height: 1.5; border: 1px solid #a2a9b1;">
+            <thead>
+              <tr class="bg-[#eaecf0] border-b border-[#a2a9b1] text-[#202122] font-bold">
+                <th class="p-1.5 pl-3">선택 항목 (Choice)</th>
+                <th class="p-1.5 text-right">투표수 (Votes)</th>
+                <th class="p-1.5 text-right pr-3">%</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+        
+        if (state.referendumChoices && state.referendumChoices.length > 0) {
+          state.referendumChoices.forEach((choice, idx) => {
+            // 합계나 투표율 같은 특수 행은 연한 회색 및 볼드 처리로 고증 극대화
+            const isTotalRow = choice.label.includes("총") || choice.label.includes("합계") || choice.label.includes("Total") || choice.label.includes("유효") || choice.label.includes("Valid") || choice.label.includes("등록") || choice.label.includes("Registered");
+            const rowClass = isTotalRow ? "bg-neutral-50/70 border-t border-neutral-300 font-bold" : "border-b border-neutral-200 hover:bg-neutral-50";
+            
+            tableHtml += `
+              <tr class="${rowClass}">
+                <td class="p-1.5 pl-3 text-[#202122]">${parseWikipediaMarkup(choice.label) || '-'}</td>
+                <td class="p-1.5 text-right font-mono text-neutral-800">${choice.votes || '0'}</td>
+                <td class="p-1.5 text-right font-mono text-neutral-800 pr-3">${choice.percentage || '0.00%'}</td>
+              </tr>
+            `;
+          });
+        } else {
+          tableHtml += `
+            <tr>
+              <td colspan="3" class="p-4 text-center text-neutral-400 italic">설정된 투표 선택 결과가 없습니다.</td>
+            </tr>
+          `;
+        }
+
+        tableHtml += `
+            </tbody>
+          </table>
+        `;
+        candidatesContainer.innerHTML = tableHtml;
+
+      } else if (state.electionType === "next_legislative") {
         let tableHtml = `
           <table class="w-full border-collapse text-xs text-left" style="line-height: 1.5;">
             <thead>
@@ -1686,28 +2004,30 @@
           tbody.appendChild(trName);
 
           // 3. 통합 가변 텍스트 상세 정보 리스트 실시간 자동 행 정렬 조립 (100% 동조화)
-          const textFields = state.candidateFieldsConfig.filter(f => f.type !== "image");
-          textFields.forEach(field => {
-            const trField = document.createElement("tr");
-            trField.className = "border-b border-neutral-100 text-xs";
-            row.forEach(c => {
-              const td = document.createElement("td");
-              td.className = "p-1.5 text-center align-middle";
-              const val = c.fieldValues ? c.fieldValues[field.id] : "";
-              
-              let styledVal = parseWikipediaMarkup(val) || '-';
-              if (field.id === "seatsWon" || field.id === "seats" || field.label.includes("획득 의석") || field.label.includes("Seats won")) {
-                styledVal = `<strong class="text-sm font-bold text-neutral-900">${parseWikipediaMarkup(val) || '0'}</strong>`;
-              }
+          if (state.candidateFieldsConfig) {
+            const textFields = state.candidateFieldsConfig.filter(f => f.type !== "image");
+            textFields.forEach(field => {
+              const trField = document.createElement("tr");
+              trField.className = "border-b border-neutral-100 text-xs";
+              row.forEach(c => {
+                const td = document.createElement("td");
+                td.className = "p-1.5 text-center align-middle";
+                const val = c.fieldValues ? c.fieldValues[field.id] : "";
+                
+                let styledVal = parseWikipediaMarkup(val) || '-';
+                if (field.id === "seatsWon" || field.id === "seats" || field.label.includes("획득 의석") || field.label.includes("Seats won")) {
+                  styledVal = `<strong class="text-sm font-bold text-neutral-900">${parseWikipediaMarkup(val) || '0'}</strong>`;
+                }
 
-              td.innerHTML = `
-                <span class="text-[9px] text-neutral-400 block font-bold">${parseWikipediaMarkup(field.label)}</span>
-                <span class="text-neutral-800 leading-normal">${styledVal}</span>
-              `;
-              trField.appendChild(td);
+                td.innerHTML = `
+                  <span class="text-[9px] text-neutral-400 block font-bold">${parseWikipediaMarkup(field.label)}</span>
+                  <span class="text-neutral-800 leading-normal">${styledVal}</span>
+                `;
+                trField.appendChild(td);
+              });
+              tbody.appendChild(trField);
             });
-            tbody.appendChild(trField);
-          });
+          }
 
         });
 
@@ -1719,7 +2039,7 @@
     // 미디어위키 마크업 출력 렌더링 구역 (안전 제어 및 동적 상세 정보 통합)
     function updateMarkup() {
       const outBox = document.getElementById("markup-output");
-      if (!outBox) return; // markup-output이 없을 경우 방지
+      if (!outBox) return;
 
       let code = "";
 
@@ -1732,6 +2052,63 @@
           code += `| style="border-left: 4px solid ${c.color};" | [[${c.party}]] || ${c.name || '-'} || style="text-align: right;" | ${seatsVal}\n`;
         });
         code += `|}\n`;
+      } else if (state.electionType === "referendum") {
+        // 국민투표 양식 마크업 구조 고증
+        const pStr = state.outputLang === "ko" ? "인포박스 국민투표" : "Infobox referendum";
+        code += `{{${pStr}\n`;
+        code += `| 명칭 = ${state.electionName || ''}\n`;
+        if (state.flagImage) {
+          const flagName = state.flagImage.includes('/') ? state.flagImage.split('/').pop() : state.flagImage;
+          code += `| 국기 = ${flagName || ''}\n`;
+        }
+        code += `| 투표일 = ${state.electionDate || ''}\n`;
+        if (state.beforeElectionYear) code += `| 이전투표 = ${state.beforeElectionYear}\n`;
+        if (state.afterElectionYear) code += `| 차기투표 = ${state.afterElectionYear}\n`;
+        
+        if (state.turnoutDetails) code += `| 세부주제 = ${state.turnoutDetails.replace(/\n/g, "<br>")}\n`;
+        if (state.registeredVoters) code += `| 유권자수 = ${state.registeredVoters}\n`;
+        if (state.turnoutText) code += `| 투표율 = ${state.turnoutText.replace(/\n/g, "<br>")}\n`;
+
+        if (state.previewWidth !== 320) {
+          code += `| 너비 = ${state.previewWidth}px\n`;
+        }
+
+        if (state.referendumQuestion) {
+          code += `| 질문 = ${state.referendumQuestion.replace(/\n/g, "<br>")}\n`;
+        }
+
+        // 선택지 및 결과 데이터 파라미터 매핑
+        if (state.referendumChoices && state.referendumChoices.length > 0) {
+          code += `\n<!-- 국민투표 결과 목록 -->\n`;
+          state.referendumChoices.forEach((choice, idx) => {
+            const num = idx + 1;
+            code += `| 항목${num} = ${choice.label}\n`;
+            code += `| 표수${num} = ${choice.votes}\n`;
+            code += `| 비율${num} = ${choice.percentage}\n`;
+          });
+        }
+
+        // 가변 공통 통계 마크업 바인딩
+        if (state.customStats && state.customStats.length > 0) {
+          code += `\n<!-- 가변 추가 통계 -->\n`;
+          state.customStats.forEach(item => {
+            if (item.label && item.label.trim() !== "") {
+              code += `| ${item.label} = ${item.value}\n`;
+            }
+          });
+        }
+
+        if (state.mapImage) {
+          const fileName = state.mapImage.includes('/') ? state.mapImage.split('/').pop() : state.mapImage;
+          code += `| 지도 = ${fileName || ''}\n`;
+          code += `| 지도설명 = ${state.mapCaption || ''}\n`;
+        }
+        code += `| 전임 = ${state.beforeElection || ''}\n`;
+        code += `| 전임조직 = ${state.beforeParty || ''}\n`;
+        code += `| 후임 = ${state.afterElection || ''}\n`;
+        code += `| 후임조직 = ${state.afterParty || ''}\n`;
+        code += `\n}}`;
+
       } else {
         const pStr = state.outputLang === "ko" ? "인포박스 선거" : "Infobox election";
         code += `{{${pStr}\n`;
@@ -1747,6 +2124,10 @@
         if (state.turnoutDetails) code += `| 선거정보주석 = ${state.turnoutDetails.replace(/\n/g, "<br>")}\n`;
         if (state.registeredVoters) code += `| 선거인수 = ${state.registeredVoters}\n`;
         if (state.turnoutText) code += `| 투표율 = ${state.turnoutText.replace(/\n/g, "<br>")}\n`;
+
+        if (state.previewWidth !== 320) {
+          code += `| 너비 = ${state.previewWidth}px\n`;
+        }
 
         // 가변 공통 통계 마크업 바인딩
         if (state.customStats && state.customStats.length > 0) {
@@ -1830,10 +2211,12 @@
       state.selectedFont = fontType;
       const pBox = document.getElementById("wikipedia-preview-box");
       if (!pBox) return;
-      pBox.className = "w-full max-w-[320px] bg-[#f8f9fa] text-[#202122] border border-[#a2a9b1] text-[13px] shadow-sm leading-relaxed";
+      pBox.className = "w-full bg-[#f8f9fa] text-[#202122] border border-[#a2a9b1] text-[13px] shadow-sm leading-relaxed";
       
       if (fontType === 'wikipedia') {
         pBox.classList.add("font-wikipedia");
+      } else if (fontType === 'gmarket') {
+        pBox.classList.add("font-gmarket");
       } else if (fontType === 'onestore') {
         pBox.classList.add("font-onestore");
       } else if (fontType === 'spoqa') {
@@ -1842,7 +2225,7 @@
         pBox.classList.add("font-nostalgic");
       }
 
-      const fonts = ['wikipedia', 'onestore', 'spoqa', 'nostalgic'];
+      const fonts = ['wikipedia', 'gmarket', 'onestore', 'spoqa', 'nostalgic'];
       fonts.forEach(f => {
         const btn = document.getElementById(`btn-font-${f}`);
         if (btn) {
