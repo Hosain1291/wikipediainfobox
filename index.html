@@ -76,9 +76,9 @@
       <div>
         <h1 class="text-lg font-bold text-neutral-900 flex items-center gap-2 flex-wrap">
           위키백과 선거 인포박스 빌더
-          <span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-extrabold tracking-wider">v3.0 MARKUP</span>
+          <span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-extrabold tracking-wider">v3.1 MARKUP</span>
         </h1>
-        <p class="text-xs text-neutral-500">포커스 유실 없음 • 마크업 지원 한국어화 고증 판본</p>
+        <p class="text-xs text-neutral-500">포커스 유실 없음 • 스마트 이미지 안심 패치 탑재</p>
       </div>
     </div>
 
@@ -494,7 +494,7 @@
 
           <!-- 국기 이미지 노출 레이아웃 -->
           <div id="preview-flag-container" class="py-2.5 flex justify-center bg-white border-b border-neutral-200">
-            <img id="preview-flagImage" src="" alt="국기" class="max-h-[30px] w-auto object-contain">
+            <img id="preview-flagImage" src="" alt="국기" onerror="handleFlagError(this)" class="max-h-[30px] w-auto object-contain">
           </div>
 
           <!-- 연도별 좌우 내비게이션 바 및 정중앙 선거일 텍스트 -->
@@ -518,7 +518,7 @@
           <!-- 선거지도 컨테이너 -->
           <div id="preview-map-section" class="p-2 text-center border-b border-[#a2a9b1] bg-white">
             <div class="mx-auto max-w-full overflow-hidden flex items-center justify-center p-1 border border-[#e8ecef] bg-neutral-50">
-              <img id="preview-map-image" src="" alt="선거 지도" class="max-h-[190px] w-auto object-contain">
+              <img id="preview-map-image" src="" alt="선거 지도" onerror="handleMapError(this)" class="max-h-[190px] w-auto object-contain">
             </div>
             <p id="preview-map-caption" class="text-[11px] text-neutral-500 mt-1.5 leading-snug px-1 text-left">
               설명
@@ -563,7 +563,46 @@
 
   <!-- 자바스크립트 브레인 영역 -->
   <script>
-    // 위키백과 마크업 리치 텍스트 파싱 전용 모터 함수 (image_e3ae8e.png 고증 및 번역 수월화)
+    // [이미지 안심 복구 솔루션] 로딩 실패시 플레이스홀더를 동적으로 그리는 핸들러 전역 배치
+    window.handleCandidateImageError = function(img, name) {
+      const initials = name ? name.trim().substring(0, 3) : "후보";
+      const parent = img.parentElement;
+      if (parent) {
+        parent.innerHTML = `
+          <div class="w-full h-full bg-neutral-100 flex flex-col items-center justify-center border border-[#a2a9b1] rounded p-1 text-center select-none" title="${name}">
+            <svg class="w-7 h-7 text-neutral-300 mb-1" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+            <div class="text-[9px] font-bold text-neutral-400 truncate w-full">${initials}</div>
+          </div>
+        `;
+      }
+    };
+
+    window.handleFlagError = function(img) {
+      img.outerHTML = `
+        <div class="px-3 py-1 bg-neutral-50 border border-neutral-200 rounded text-[10px] font-semibold text-neutral-500 flex items-center gap-1 select-none">
+          🏳️ 국기 이미지 없음 (링크 확인)
+        </div>
+      `;
+    };
+
+    window.handleMapError = function(img) {
+      const parent = img.parentElement;
+      if (parent) {
+        parent.innerHTML = `
+          <div class="w-full py-8 px-4 bg-neutral-100 flex flex-col items-center justify-center border border-[#e8ecef] rounded text-center select-none">
+            <svg class="w-8 h-8 text-neutral-300 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L16 4m0 13V4m0 0L9 7" />
+            </svg>
+            <div class="text-xs font-semibold text-neutral-400">지도 데이터를 불러올 수 없습니다</div>
+            <div class="text-[9px] text-neutral-300 mt-0.5">정밀 이미지 URL을 입력해주세요</div>
+          </div>
+        `;
+      }
+    };
+
+    // 위키백과 마크업 리치 텍스트 파싱 전용 모터 함수
     function parseWikipediaMarkup(text) {
       if (!text) return "";
       let parsed = text;
@@ -595,7 +634,7 @@
       return parsed;
     }
 
-    // 1. 위키 데이터 프리셋 정의 (제시된 이미지 4개 완전 한국어화 고증화)
+    // 1. 위키 데이터 프리셋 정의
     const PRESETS = {
       ko_local_2026: {
         electionType: "local",
@@ -812,7 +851,15 @@
       bindInputEvents();
     };
 
-    // 3. 인풋 실시간 바인딩 처리 (키보드 유지 핵심 비결)
+    // 안전한 DOM 값 설정을 위한 방어용 헬퍼 함수
+    function setElementValue(id, val) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.value = val;
+      }
+    }
+
+    // 3. 인풋 실시간 바인딩 처리
     function bindInputEvents() {
       // 선거 기본 정보
       bindField("input-electionName", "electionName");
@@ -835,15 +882,18 @@
       bindField("input-mapImage", "mapImage");
       bindField("input-mapCaption", "mapCaption");
 
-      // 미국식 선거 체크박스 토글
-      document.getElementById("input-isUSStyle").addEventListener("change", function(e) {
-        state.isUSStyle = e.target.checked;
-        toggleUSStyleUI();
-        updatePreview();
-        updateMarkup();
-      });
+      // 미국식 선거 체크박스 토글 (존재 여부 안전 확인)
+      const usStyleCheckbox = document.getElementById("input-isUSStyle");
+      if (usStyleCheckbox) {
+        usStyleCheckbox.addEventListener("change", function(e) {
+          state.isUSStyle = e.target.checked;
+          toggleUSStyleUI();
+          updatePreview();
+          updateMarkup();
+        });
+      }
 
-      // 후보자 세부 편집 필드 바인딩 (실시간 업데이트)
+      // 후보자 세부 편집 필드 바인딩
       bindCandidateField("cand-name", "name");
       bindCandidateField("cand-party", "party");
       bindCandidateField("cand-votes", "votes");
@@ -869,40 +919,53 @@
       bindCandidateField("cand-municipalSeatsChange", "municipalSeatsChange");
 
       // 후보자 컬러 피커 양방향 연동
-      document.getElementById("cand-color-picker").addEventListener("input", function(e) {
-        const val = e.target.value;
-        document.getElementById("cand-color-text").value = val;
-        updateActiveCandidateValue("color", val);
-        updateCandidateTabStyling(state.editingCandidateId, val);
-      });
+      const colorPicker = document.getElementById("cand-color-picker");
+      const colorText = document.getElementById("cand-color-text");
 
-      document.getElementById("cand-color-text").addEventListener("input", function(e) {
-        const val = e.target.value;
-        if(val.startsWith("#") && val.length === 7) {
-          document.getElementById("cand-color-picker").value = val;
+      if (colorPicker) {
+        colorPicker.addEventListener("input", function(e) {
+          const val = e.target.value;
+          if (colorText) colorText.value = val;
           updateActiveCandidateValue("color", val);
           updateCandidateTabStyling(state.editingCandidateId, val);
-        }
-      });
+        });
+      }
+
+      if (colorText) {
+        colorText.addEventListener("input", function(e) {
+          const val = e.target.value;
+          if (val.startsWith("#") && val.length === 7) {
+            if (colorPicker) colorPicker.value = val;
+            updateActiveCandidateValue("color", val);
+            updateCandidateTabStyling(state.editingCandidateId, val);
+          }
+        });
+      }
     }
 
-    // 인풋 데이터 - 모델 바인딩 유틸리티
+    // 인풋 데이터 - 모델 바인딩 유틸리티 (DOM 방어 가드 강화)
     function bindField(elemId, stateKey) {
-      document.getElementById(elemId).addEventListener("input", function(e) {
-        state[stateKey] = e.target.value;
-        updatePreview();
-        updateMarkup();
-      });
+      const el = document.getElementById(elemId);
+      if (el) {
+        el.addEventListener("input", function(e) {
+          state[stateKey] = e.target.value;
+          updatePreview();
+          updateMarkup();
+        });
+      }
     }
 
-    // 후보자 필드 전용 데이터 바인딩 유틸리티
+    // 후보자 필드 전용 데이터 바인딩 유틸리티 (DOM 방어 가드 강화)
     function bindCandidateField(elemId, fieldKey) {
-      document.getElementById(elemId).addEventListener("input", function(e) {
-        updateActiveCandidateValue(fieldKey, e.target.value);
-        if (fieldKey === "name" || fieldKey === "party") {
-          updateCandidateTabLabel(state.editingCandidateId, state.candidates.find(c => c.id === state.editingCandidateId));
-        }
-      });
+      const el = document.getElementById(elemId);
+      if (el) {
+        el.addEventListener("input", function(e) {
+          updateActiveCandidateValue(fieldKey, e.target.value);
+          if (fieldKey === "name" || fieldKey === "party") {
+            updateCandidateTabLabel(state.editingCandidateId, state.candidates.find(c => c.id === state.editingCandidateId));
+          }
+        });
+      }
     }
 
     // 선거 유형 변경 핸들러
@@ -920,33 +983,33 @@
       const localSection = document.getElementById("section-local-fields");
       const imageUploader = document.getElementById("section-image-uploader");
 
-      // 타이틀 텍스트 변환 (고증 및 한글화)
+      // 타이틀 텍스트 변환
       const labelName = document.getElementById("label-cand-name");
       const labelParty = document.getElementById("label-cand-party");
 
-      presSection.classList.add("hidden");
-      legSection.classList.add("hidden");
-      localSection.classList.add("hidden");
-      imageUploader.classList.remove("hidden");
+      if (presSection) presSection.classList.add("hidden");
+      if (legSection) legSection.classList.add("hidden");
+      if (localSection) localSection.classList.add("hidden");
+      if (imageUploader) imageUploader.classList.remove("hidden");
 
-      labelName.innerText = "이름 (Leader)";
-      labelParty.innerText = "정당 (Party)";
+      if (labelName) labelName.innerText = "이름 (Leader)";
+      if (labelParty) labelParty.innerText = "정당 (Party)";
 
       if (state.electionType === "presidential") {
-        presSection.classList.remove("hidden");
+        if (presSection) presSection.classList.remove("hidden");
       } else if (state.electionType === "legislative") {
-        legSection.classList.remove("hidden");
+        if (legSection) legSection.classList.remove("hidden");
       } else if (state.electionType === "local") {
-        localSection.classList.remove("hidden");
+        if (localSection) localSection.classList.remove("hidden");
       } else if (state.electionType === "next_legislative") {
-        labelName.innerText = "대표명 (Leader)";
-        labelParty.innerText = "정당명 (Party)";
-        legSection.classList.remove("hidden"); // 의석수 표기용 필드 재활용
-        imageUploader.classList.add("hidden"); // 의석 테이블 형태는 이미지 미출력
+        if (labelName) labelName.innerText = "대표명 (Leader)";
+        if (labelParty) labelParty.innerText = "정당명 (Party)";
+        if (legSection) legSection.classList.remove("hidden"); // 의석수 표기용 필드 재활용
+        if (imageUploader) imageUploader.classList.add("hidden"); // 의석 테이블 형태는 이미지 미출력
       }
     }
 
-    // 4. 프리셋 데이터 기입 함수
+    // 프리셋 데이터 기입 함수
     function loadPreset(presetKey) {
       const preset = PRESETS[presetKey];
       if (preset) {
@@ -978,25 +1041,27 @@
       state.candidates = JSON.parse(JSON.stringify(data.candidates)); // 깊은 복사
       state.editingCandidateId = state.candidates[0].id;
 
-      // 폼 필드값 초기화
-      document.getElementById("input-electionType").value = state.electionType;
-      document.getElementById("input-electionName").value = state.electionName;
-      document.getElementById("input-flagImage").value = state.flagImage;
-      document.getElementById("input-beforeElectionYear").value = state.beforeElectionYear;
-      document.getElementById("input-afterElectionYear").value = state.afterElectionYear;
-      document.getElementById("input-electionDate").value = state.electionDate;
-      document.getElementById("input-title").value = state.title;
+      // 폼 필드값 초기화 (안전한 setElementValue 모터 가드 적용)
+      const typeInput = document.getElementById("input-electionType");
+      if (typeInput) typeInput.value = state.electionType;
 
-      document.getElementById("input-turnoutDetails").value = state.turnoutDetails;
-      document.getElementById("input-registeredVoters").value = state.registeredVoters;
-      document.getElementById("input-turnoutText").value = state.turnoutText;
+      setElementValue("input-electionName", state.electionName);
+      setElementValue("input-flagImage", state.flagImage);
+      setElementValue("input-beforeElectionYear", state.beforeElectionYear);
+      setElementValue("input-afterElectionYear", state.afterElectionYear);
+      setElementValue("input-electionDate", state.electionDate);
+      setElementValue("input-title", state.title);
 
-      document.getElementById("input-beforeElection").value = state.beforeElection;
-      document.getElementById("input-beforeParty").value = state.beforeParty;
-      document.getElementById("input-afterElection").value = state.afterElection;
-      document.getElementById("input-afterParty").value = state.afterParty;
-      document.getElementById("input-mapImage").value = state.mapImage;
-      document.getElementById("input-mapCaption").value = state.mapCaption;
+      setElementValue("input-turnoutDetails", state.turnoutDetails);
+      setElementValue("input-registeredVoters", state.registeredVoters);
+      setElementValue("input-turnoutText", state.turnoutText);
+
+      setElementValue("input-beforeElection", state.beforeElection);
+      setElementValue("input-beforeParty", state.beforeParty);
+      setElementValue("input-afterElection", state.afterElection);
+      setElementValue("input-afterParty", state.afterParty);
+      setElementValue("input-mapImage", state.mapImage);
+      setElementValue("input-mapCaption", state.mapCaption);
 
       toggleUSStyleUI();
       toggleElectionTypeUI();
@@ -1006,19 +1071,21 @@
       updateMarkup();
     }
 
-    // 5. 에디터 탭 스위칭 토글러
+    // 에디터 탭 스위칭 토글러
     function switchEditorTab(tabName) {
       state.activeTab = tabName;
       const tabs = ["meta", "candidates", "outcome"];
       tabs.forEach(t => {
         const btn = document.getElementById(`tab-btn-${t}`);
         const sect = document.getElementById(`editor-section-${t}`);
-        if (t === tabName) {
-          btn.className = "flex-1 py-3 px-1 text-center transition-all border-b-2 border-blue-600 text-blue-600 bg-white";
-          sect.classList.remove("hidden");
-        } else {
-          btn.className = "flex-1 py-3 px-1 text-center transition-all border-b-2 border-transparent text-neutral-500 hover:text-neutral-800";
-          sect.classList.add("hidden");
+        if (btn && sect) {
+          if (t === tabName) {
+            btn.className = "flex-1 py-3 px-1 text-center transition-all border-b-2 border-blue-600 text-blue-600 bg-white";
+            sect.classList.remove("hidden");
+          } else {
+            btn.className = "flex-1 py-3 px-1 text-center transition-all border-b-2 border-transparent text-neutral-500 hover:text-neutral-800";
+            sect.classList.add("hidden");
+          }
         }
       });
     }
@@ -1036,9 +1103,10 @@
       }
     }
 
-    // 6. 후보자 탭 렌더링 세션
+    // 후보자 탭 렌더링 세션
     function renderCandidateTabs() {
       const container = document.getElementById("candidate-tabs-list");
+      if (!container) return;
       container.innerHTML = "";
       
       state.candidates.forEach((c, idx) => {
@@ -1077,7 +1145,7 @@
       }
     }
 
-    // 7. 특정 후보자 세부 데이터 폼 적용 로드
+    // 특정 후보자 세부 데이터 폼 적용 로드
     function selectCandidate(id) {
       state.editingCandidateId = id;
       renderCandidateTabs();
@@ -1088,32 +1156,36 @@
       const cand = state.candidates.find(c => c.id === state.editingCandidateId);
       if (!cand) return;
 
-      document.getElementById("editor-cand-indicator").style.backgroundColor = cand.color;
-      document.getElementById("cand-name").value = cand.name || "";
-      document.getElementById("cand-party").value = cand.party || "";
-      document.getElementById("cand-color-picker").value = cand.color || "#808080";
-      document.getElementById("cand-color-text").value = cand.color || "#808080";
-      document.getElementById("cand-votes").value = cand.votes || "0";
-      document.getElementById("cand-percentage").value = cand.percentage || "0.00";
-      document.getElementById("cand-image").value = cand.image || "";
+      const indicator = document.getElementById("editor-cand-indicator");
+      if (indicator) {
+        indicator.style.backgroundColor = cand.color;
+      }
 
-      // 국회의원 선거 전용 동적 필드 반영
-      document.getElementById("cand-alliance").value = cand.alliance || "";
-      document.getElementById("cand-lastElection").value = cand.lastElection || "";
-      document.getElementById("cand-seatsWon").value = cand.seatsWon || "";
-      document.getElementById("cand-seatChange").value = cand.seatChange || "";
-      document.getElementById("cand-constituencyVote").value = cand.constituencyVote || "";
-      document.getElementById("cand-constituencyPercent").value = cand.constituencyPercent || "";
-      document.getElementById("cand-regionalVote").value = cand.regionalVote || "";
-      document.getElementById("cand-regionalPercent").value = cand.regionalPercent || "";
+      setElementValue("cand-name", cand.name || "");
+      setElementValue("cand-party", cand.party || "");
+      setElementValue("cand-color-picker", cand.color || "#808080");
+      setElementValue("cand-color-text", cand.color || "#808080");
+      setElementValue("cand-votes", cand.votes || "0");
+      setElementValue("cand-percentage", cand.percentage || "0.00");
+      setElementValue("cand-image", cand.image || "");
 
-      // 지방선거 전용 동적 필드 반영
-      document.getElementById("cand-regionalSeatsLast").value = cand.regionalSeatsLast || "";
-      document.getElementById("cand-municipalSeatsLast").value = cand.municipalSeatsLast || "";
-      document.getElementById("cand-regionalSeatsWon").value = cand.regionalSeatsWon || "";
-      document.getElementById("cand-municipalSeatsWon").value = cand.municipalSeatsWon || "";
-      document.getElementById("cand-regionalSeatsChange").value = cand.regionalSeatsChange || "";
-      document.getElementById("cand-municipalSeatsChange").value = cand.municipalSeatsChange || "";
+      // 국회의원 선거 전용 동적 필드 반영 (안전 기어)
+      setElementValue("cand-alliance", cand.alliance || "");
+      setElementValue("cand-lastElection", cand.lastElection || "");
+      setElementValue("cand-seatsWon", cand.seatsWon || "");
+      setElementValue("cand-seatChange", cand.seatChange || "");
+      setElementValue("cand-constituencyVote", cand.constituencyVote || "");
+      setElementValue("cand-constituencyPercent", cand.constituencyPercent || "");
+      setElementValue("cand-regionalVote", cand.regionalVote || "");
+      setElementValue("cand-regionalPercent", cand.regionalPercent || "");
+
+      // 지방선거 전용 동적 필드 반영 (안전 기어)
+      setElementValue("cand-regionalSeatsLast", cand.regionalSeatsLast || "");
+      setElementValue("cand-municipalSeatsLast", cand.municipalSeatsLast || "");
+      setElementValue("cand-regionalSeatsWon", cand.regionalSeatsWon || "");
+      setElementValue("cand-municipalSeatsWon", cand.municipalSeatsWon || "");
+      setElementValue("cand-regionalSeatsChange", cand.regionalSeatsChange || "");
+      setElementValue("cand-municipalSeatsChange", cand.municipalSeatsChange || "");
     }
 
     function updateActiveCandidateValue(key, value) {
@@ -1125,7 +1197,7 @@
       }
     }
 
-    // 8. 후보 추가 / 삭제 동작
+    // 후보 추가 / 삭제 동작
     function addNewCandidate() {
       if (state.candidates.length >= 12) {
         triggerToast("선거 인포박스의 크기를 고려해 최대 12명까지만 생성할 수 있습니다.");
@@ -1136,7 +1208,7 @@
         id: nextId,
         name: `새 후보 ${nextId}`,
         party: "신규정당",
-        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Placeholder_no_image_person.svg/150px-Placeholder_no_image_person.svg.png",
+        image: "",
         color: "#808080",
         votes: "0",
         percentage: "0.00",
@@ -1167,7 +1239,7 @@
       triggerToast("라인업에서 성공적으로 제거되었습니다.");
     }
 
-    // 9. 득표율 일괄 계산
+    // 득표율 일괄 계산
     function calculatePercentages() {
       const numericVotes = state.candidates.map(c => {
         const clean = (c.votes || "").replace(/,/g, "");
@@ -1192,77 +1264,96 @@
       triggerToast(`총합 ${total.toLocaleString()}표 기준 득표율이 보정되었습니다.`);
     }
 
-    // 11. 선거 인포박스 정밀 미리보기 HTML 컴파일러 (고증 강화 한글화 분기 엔진)
+    // 선거 인포박스 정밀 미리보기 HTML 컴파일러 (고증 강화 한글화 분기 엔진 및 DOM 수동 파손 방지 가드)
     function updatePreview() {
-      // 메타 정보 수정 (마크업 지원 적용)
-      document.getElementById("preview-electionName").innerHTML = parseWikipediaMarkup(state.electionName) || "선거 정보 없음";
+      // 메타 정보 수정
+      const previewName = document.getElementById("preview-electionName");
+      if (previewName) previewName.innerHTML = parseWikipediaMarkup(state.electionName) || "선거 정보 없음";
       
       // 국기 영역 처리
       const flagContainer = document.getElementById("preview-flag-container");
-      const flagImg = document.getElementById("preview-flagImage");
-      if (state.flagImage) {
-        flagContainer.classList.remove("hidden");
-        flagImg.src = state.flagImage;
-      } else {
-        flagContainer.classList.add("hidden");
+      if (flagContainer) {
+        if (state.flagImage) {
+          flagContainer.innerHTML = `<img id="preview-flagImage" src="${state.flagImage}" alt="국기" onerror="handleFlagError(this)" class="max-h-[30px] w-auto object-contain">`;
+          flagContainer.classList.remove("hidden");
+        } else {
+          flagContainer.classList.add("hidden");
+        }
       }
 
       // 이전 및 다음 선거 연도 가공
       const beforeYearElem = document.getElementById("preview-beforeElectionYear");
       const afterYearElem = document.getElementById("preview-afterElectionYear");
-      beforeYearElem.innerHTML = state.beforeElectionYear ? parseWikipediaMarkup(`← ${state.beforeElectionYear}`) : "";
-      afterYearElem.innerHTML = state.afterElectionYear ? parseWikipediaMarkup(`${state.afterElectionYear} →`) : "";
+      if (beforeYearElem) beforeYearElem.innerHTML = state.beforeElectionYear ? parseWikipediaMarkup(`← ${state.beforeElectionYear}`) : "";
+      if (afterYearElem) afterYearElem.innerHTML = state.afterElectionYear ? parseWikipediaMarkup(`${state.afterElectionYear} →`) : "";
 
       // 실 선거일 텍스트 중앙 정렬 배치
-      document.getElementById("preview-electionDate").innerHTML = parseWikipediaMarkup(state.electionDate) || "선거일 미기입";
+      const electionDateElem = document.getElementById("preview-electionDate");
+      if (electionDateElem) electionDateElem.innerHTML = parseWikipediaMarkup(state.electionDate) || "선거일 미기입";
 
       // 상단 추가 정보 및 투표율 렌더링
       const statsContainer = document.getElementById("preview-stats-container");
       const turnoutDetailsElem = document.getElementById("preview-turnoutDetails");
       const votersTurnoutElem = document.getElementById("preview-voters-turnout");
 
-      if (state.turnoutDetails || state.registeredVoters || state.turnoutText) {
-        statsContainer.classList.remove("hidden");
-        turnoutDetailsElem.innerHTML = parseWikipediaMarkup(state.turnoutDetails) || "";
-        
-        let voterHtml = "";
-        if (state.registeredVoters) {
-          voterHtml += `<div><strong>선거인수</strong>: ${parseInt(state.registeredVoters.replace(/,/g, "") || 0).toLocaleString()}명</div>`;
+      if (statsContainer && turnoutDetailsElem && votersTurnoutElem) {
+        if (state.turnoutDetails || state.registeredVoters || state.turnoutText) {
+          statsContainer.classList.remove("hidden");
+          turnoutDetailsElem.innerHTML = parseWikipediaMarkup(state.turnoutDetails) || "";
+          
+          let voterHtml = "";
+          if (state.registeredVoters) {
+            voterHtml += `<div><strong>선거인수</strong>: ${parseInt(state.registeredVoters.replace(/,/g, "") || 0).toLocaleString()}명</div>`;
+          }
+          if (state.turnoutText) {
+            voterHtml += `<div><strong>투표율</strong>: ${parseWikipediaMarkup(state.turnoutText).replace(/\n/g, "<br>")}</div>`;
+          }
+          votersTurnoutElem.innerHTML = voterHtml;
+        } else {
+          statsContainer.classList.add("hidden");
         }
-        if (state.turnoutText) {
-          voterHtml += `<div><strong>투표율</strong>: ${parseWikipediaMarkup(state.turnoutText).replace(/\n/g, "<br>")}</div>`;
-        }
-        votersTurnoutElem.innerHTML = voterHtml;
-      } else {
-        statsContainer.classList.add("hidden");
       }
 
       // 하단 전후임 연계 
-      document.getElementById("preview-before-title").innerText = `이전 ${state.title || "공직"}`;
-      document.getElementById("preview-beforeElection").innerText = state.beforeElection || "공석";
-      document.getElementById("preview-beforeParty").innerText = state.beforeParty || "무소속";
+      const beforeTitle = document.getElementById("preview-before-title");
+      const beforeElect = document.getElementById("preview-beforeElection");
+      const beforeParty = document.getElementById("preview-beforeParty");
+      if (beforeTitle) beforeTitle.innerText = `이전 ${state.title || "공직"}`;
+      if (beforeElect) beforeElect.innerText = state.beforeElection || "공석";
+      if (beforeParty) beforeParty.innerText = state.beforeParty || "무소속";
 
-      document.getElementById("preview-after-title").innerText = `차기 ${state.title || "공직"}`;
-      document.getElementById("preview-afterElection").innerText = state.afterElection || "공석";
-      document.getElementById("preview-afterParty").innerText = state.afterParty || "무소속";
+      const afterTitle = document.getElementById("preview-after-title");
+      const afterElect = document.getElementById("preview-afterElection");
+      const afterParty = document.getElementById("preview-afterParty");
+      if (afterTitle) afterTitle.innerText = `차기 ${state.title || "공직"}`;
+      if (afterElect) afterElect.innerText = state.afterElection || "공석";
+      if (afterParty) afterParty.innerText = state.afterParty || "무소속";
 
       // 선거 지도 영역 분산 컴파일
       const mapSec = document.getElementById("preview-map-section");
-      if (state.mapImage) {
-        mapSec.classList.remove("hidden");
-        document.getElementById("preview-map-image").src = state.mapImage;
-        document.getElementById("preview-map-caption").innerHTML = parseWikipediaMarkup(state.mapCaption) || "";
-      } else {
-        mapSec.classList.add("hidden");
+      if (mapSec) {
+        if (state.mapImage) {
+          mapSec.innerHTML = `
+            <div class="mx-auto max-w-full overflow-hidden flex items-center justify-center p-1 border border-[#e8ecef] bg-neutral-50">
+              <img id="preview-map-image" src="${state.mapImage}" alt="선거 지도" onerror="handleMapError(this)" class="max-h-[190px] w-auto object-contain">
+            </div>
+            <p id="preview-map-caption" class="text-[11px] text-neutral-500 mt-1.5 leading-snug px-1 text-left">
+              ${parseWikipediaMarkup(state.mapCaption) || ""}
+            </p>
+          `;
+          mapSec.classList.remove("hidden");
+        } else {
+          mapSec.classList.add("hidden");
+        }
       }
 
       // 후보자 그리드 영역 렌더링 컨테이너
       const candidatesContainer = document.getElementById("preview-candidates-container");
+      if (!candidatesContainer) return;
       candidatesContainer.innerHTML = "";
 
-      // 유형에 맞춘 특수 렌더링 분기 (한국어화 고증)
+      // 유형에 맞춘 특수 렌더링 분기
       if (state.electionType === "next_legislative") {
-        // [Image 3 고증] 정당 현황 리스트 테이블 한국어화
         let tableHtml = `
           <table class="w-full border-collapse text-xs text-left" style="line-height: 1.5;">
             <thead>
@@ -1293,7 +1384,6 @@
         candidatesContainer.innerHTML = tableHtml;
 
       } else {
-        // [Image 1, 2, 4 고증] 격자형 프로필 매핑 가로 레이아웃 생성
         const table = document.createElement("table");
         table.className = "w-full border-collapse";
         table.style.tableLayout = "fixed";
@@ -1317,10 +1407,9 @@
             td.style.borderColor = c.color;
             td.style.width = colWidth;
             
-            const defaultAvatar = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Placeholder_no_image_person.svg/150px-Placeholder_no_image_person.svg.png";
             td.innerHTML = `
-              <div class="relative mx-auto" style="width: 85px; height: 105px;">
-                <img src="${c.image || defaultAvatar}" onerror="this.onerror=null; this.src='${defaultAvatar}';" class="w-full h-full object-cover border border-[#a2a9b1] rounded">
+              <div class="relative mx-auto flex items-center justify-center" style="width: 85px; height: 105px;">
+                <img src="${c.image || ''}" alt="${c.name}" onerror="handleCandidateImageError(this, '${c.name}')" class="w-full h-full object-cover border border-[#a2a9b1] rounded">
               </div>
             `;
             trImage.appendChild(td);
@@ -1334,7 +1423,6 @@
             const td = document.createElement("td");
             td.className = "p-1.5 text-center align-top border-b border-neutral-200";
             
-            // 지방선거, 의원선거, 대선 별 헤더 텍스트 고증 한국어화
             let leaderTitle = "후보";
             if (state.electionType === "local" || state.electionType === "legislative") {
               leaderTitle = "대표";
@@ -1348,7 +1436,7 @@
           });
           tbody.appendChild(trName);
 
-          // [선택 분기 1] 국회의원 선거 추가 스펙 (Image 2 고증 한국어화)
+          // [선택 분기 1] 국회의원 선거 추가 스펙
           if (state.electionType === "legislative") {
             // 선거 연합
             const trAlliance = document.createElement("tr");
@@ -1370,7 +1458,7 @@
             });
             tbody.appendChild(trLastSeats);
 
-            // 획득 의석 (Seats won)
+            // 획득 의석
             const trWonSeats = document.createElement("tr");
             row.forEach(c => {
               const td = document.createElement("td");
@@ -1431,7 +1519,7 @@
             tbody.appendChild(trRegPct);
           }
 
-          // [선택 분기 2] 지방선거 추가 스펙 (Image 1 고증 한국어화)
+          // [선택 분기 2] 지방선거 추가 스펙
           if (state.electionType === "local") {
             // 지난 광역의석
             const trRegSeatsLast = document.createElement("tr");
@@ -1494,7 +1582,7 @@
             tbody.appendChild(trMunSeatsChange);
           }
 
-          // [선택 분기 3] 대통령 선거 추가 스펙 (Image 4 고증 한국어화)
+          // [선택 분기 3] 대통령 선거 추가 스펙
           if (state.electionType === "presidential") {
             // 총 투표수
             const trVotes = document.createElement("tr");
@@ -1525,12 +1613,13 @@
       }
     }
 
-    // 12. 미디어위키 마크업 출력 렌더링 구역
+    // 미디어위키 마크업 출력 렌더링 구역 (안전 제어)
     function updateMarkup() {
       const outBox = document.getElementById("markup-output");
+      if (!outBox) return; // markup-output이 없을 경우 방지
+
       let code = "";
 
-      // 텍스트 출력 분할 (차기 국회의원 표형태 등 정밀 고증)
       if (state.electionType === "next_legislative") {
         code += `{| class="wikitable font-sans text-xs" style="text-align: left; width: 100%;"\n`;
         code += `! Party !! Leader !! Current seats\n`;
@@ -1597,9 +1686,10 @@
       outBox.value = code;
     }
 
-    // 13. 클립보드 복사 엔진
+    // 클립보드 복사 엔진
     function copyToClipboard() {
       const area = document.getElementById("markup-output");
+      if (!area) return;
       area.select();
       try {
         document.execCommand("copy");
@@ -1614,20 +1704,23 @@
       state.outputLang = lang;
       const bKo = document.getElementById("btn-lang-ko");
       const bEn = document.getElementById("btn-lang-en");
-      if (lang === "ko") {
-        bKo.className = "px-2.5 py-1 rounded transition bg-neutral-700 text-white shadow";
-        bEn.className = "px-2.5 py-1 rounded transition text-neutral-400";
-      } else {
-        bEn.className = "px-2.5 py-1 rounded transition bg-neutral-700 text-white shadow";
-        bKo.className = "px-2.5 py-1 rounded transition text-neutral-400";
+      if (bKo && bEn) {
+        if (lang === "ko") {
+          bKo.className = "px-2.5 py-1 rounded transition bg-neutral-700 text-white shadow";
+          bEn.className = "px-2.5 py-1 rounded transition text-neutral-400";
+        } else {
+          bEn.className = "px-2.5 py-1 rounded transition bg-neutral-700 text-white shadow";
+          bKo.className = "px-2.5 py-1 rounded transition text-neutral-400";
+        }
       }
       updateMarkup();
     }
 
-    // 14. 폰트 전환 기능
+    // 폰트 전환 기능
     function changePreviewFont(fontType) {
       state.selectedFont = fontType;
       const pBox = document.getElementById("wikipedia-preview-box");
+      if (!pBox) return;
       pBox.className = "w-full max-w-[320px] bg-[#f8f9fa] text-[#202122] border border-[#a2a9b1] text-[13px] shadow-sm leading-relaxed";
       
       if (fontType === 'wikipedia') {
@@ -1643,10 +1736,12 @@
       const fonts = ['wikipedia', 'onestore', 'spoqa', 'nostalgic'];
       fonts.forEach(f => {
         const btn = document.getElementById(`btn-font-${f}`);
-        if (f === fontType) {
-          btn.className = "font-tab text-[11px] bg-blue-600 text-white font-semibold px-2 py-1 rounded shadow-sm transition active:scale-95";
-        } else {
-          btn.className = "font-tab text-[11px] bg-neutral-100 hover:bg-neutral-200 text-neutral-500 font-semibold px-2 py-1 rounded transition active:scale-95";
+        if (btn) {
+          if (f === fontType) {
+            btn.className = "font-tab text-[11px] bg-blue-600 text-white font-semibold px-2 py-1 rounded shadow-sm transition active:scale-95";
+          } else {
+            btn.className = "font-tab text-[11px] bg-neutral-100 hover:bg-neutral-200 text-neutral-500 font-semibold px-2 py-1 rounded transition active:scale-95";
+          }
         }
       });
       triggerToast(`미리보기 서체가 전환되었습니다.`);
@@ -1656,13 +1751,15 @@
     function triggerToast(message) {
       const toast = document.getElementById("toast");
       const txt = document.getElementById("toast-text");
-      txt.innerText = message;
-      toast.classList.remove("opacity-0", "pointer-events-none");
-      toast.classList.add("opacity-100");
-      setTimeout(() => {
-        toast.classList.remove("opacity-100");
-        toast.classList.add("opacity-0", "pointer-events-none");
-      }, 2000);
+      if (toast && txt) {
+        txt.innerText = message;
+        toast.classList.remove("opacity-0", "pointer-events-none");
+        toast.classList.add("opacity-100");
+        setTimeout(() => {
+          toast.classList.remove("opacity-100");
+          toast.classList.add("opacity-0", "pointer-events-none");
+        }, 2000);
+      }
     }
   </script>
 </body>
