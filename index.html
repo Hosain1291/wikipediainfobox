@@ -1105,6 +1105,7 @@
       }
     }
 
+    // [중요 수정] 실시간 입력 감지 이벤트 바인딩 시 트림 처리 후 렌더 업데이트 연동
     function bindField(elemId, stateKey) {
       const el = document.getElementById(elemId);
       if (el) {
@@ -1240,7 +1241,7 @@
         if (sectionTitle) sectionTitle.innerHTML = `<span class="w-2.5 h-2.5 bg-blue-600 rounded-full inline-block"></span> 후보자 및 정당 목록 편집`;
         if (candBtn) candBtn.classList.remove("hidden");
         if (candTabs) candTabs.classList.remove("hidden");
-        if (candEditor) candEditor.classList.remove("hidden");
+        if (candEditor) candEditor.classList.add("hidden");
 
         if (referendumQuestionArea) referendumQuestionArea.classList.add("hidden");
         if (referendumChoicesEditor) referendumChoicesEditor.classList.add("hidden");
@@ -1709,7 +1710,7 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-[9px] text-neutral-400 font-bold">투표수 (Votes)</label>
-              <input type="text" value="${choice.votes}" oninput="updateReferendumChoiceData('${choice.id}', 'votes', this.value)" class="w-full p-1 border border-neutral-300 rounded text-xs bg-neutral-50 focus:bg-white focus:outline-none">
+              <input type="text" value="${choice.votes}" oninput="updateReferendumChoiceData('${choice.id}', 'votes', this.value)" class="w-full p-1 border border-neutral-300 rounded text-xs bg-neutral-50 focus:bg-white focus:outline-none" placeholder="투표수 미기입 시 공백">
             </div>
             <div>
               <label class="block text-[9px] text-neutral-400 font-bold">비율 (%)</label>
@@ -1911,12 +1912,16 @@
       candidatesContainer.innerHTML = "";
 
       if (state.electionType === "referendum") {
+        // [중요 개선] 등록된 국민투표 선택지 리스트 중 단 하나라도 투표수(Votes) 데이터가 들어있는지 검증
+        const hasVotes = state.referendumChoices && state.referendumChoices.some(choice => choice.votes && choice.votes.trim() !== "");
+        
+        // 투표수 정보가 아예 하나도 존재하지 않는다면 '투표수' 열을 감추고 '비율(%)'만 보여주는 2열 구조로 자동 다이내믹 변경
         let tableHtml = `
           <table class="w-full border-collapse text-xs text-left" style="line-height: 1.5; border: 1px solid #a2a9b1;">
             <thead>
               <tr class="bg-[#eaecf0] border-b border-[#a2a9b1] text-[#202122] font-bold">
                 <th class="p-1.5 pl-3">선택 항목 (Choice)</th>
-                <th class="p-1.5 text-right">투표수 (Votes)</th>
+                ${hasVotes ? `<th class="p-1.5 text-right">투표수 (Votes)</th>` : ""}
                 <th class="p-1.5 text-right pr-3">%</th>
               </tr>
             </thead>
@@ -1928,10 +1933,13 @@
             const isTotalRow = choice.label.includes("총") || choice.label.includes("합계") || choice.label.includes("Total") || choice.label.includes("유효") || choice.label.includes("Valid") || choice.label.includes("등록") || choice.label.includes("Registered");
             const rowClass = isTotalRow ? "bg-neutral-50/70 border-t border-neutral-300 font-bold" : "border-b border-neutral-200 hover:bg-neutral-50";
             
+            // 투표수 필드가 단지 공백이거나 비어 있는 경우 0대신 빈 공백 셀 처리
+            const votesVal = choice.votes ? choice.votes.trim() : "";
+
             tableHtml += `
               <tr class="${rowClass}">
                 <td class="p-1.5 pl-3 text-[#202122]">${parseWikipediaMarkup(choice.label) || '-'}</td>
-                <td class="p-1.5 text-right font-mono text-neutral-800">${choice.votes || '0'}</td>
+                ${hasVotes ? `<td class="p-1.5 text-right font-mono text-neutral-800">${votesVal}</td>` : ""}
                 <td class="p-1.5 text-right font-mono text-neutral-800 pr-3">${choice.percentage || '0.00%'}</td>
               </tr>
             `;
@@ -1939,7 +1947,7 @@
         } else {
           tableHtml += `
             <tr>
-              <td colspan="3" class="p-4 text-center text-neutral-400 italic">설정된 투표 선택 결과가 없습니다.</td>
+              <td colspan="${hasVotes ? 3 : 2}" class="p-4 text-center text-neutral-400 italic">설정된 투표 선택 결과가 없습니다.</td>
             </tr>
           `;
         }
@@ -2112,7 +2120,9 @@
           state.referendumChoices.forEach((choice, idx) => {
             const num = idx + 1;
             code += `| 항목${num} = ${choice.label}\n`;
-            code += `| 표수${num} = ${choice.votes}\n`;
+            if (choice.votes && choice.votes.trim() !== "") {
+              code += `| 표수${num} = ${choice.votes}\n`;
+            }
             code += `| 비율${num} = ${choice.percentage}\n`;
           });
         }
