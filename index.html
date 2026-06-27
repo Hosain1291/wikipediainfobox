@@ -6,6 +6,8 @@
   <title>위키백과 선거 인포박스 빌더 PRO</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2canvas (HTML 엘리먼트 이미지 저장 라이브러리) CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <!-- 외부 폰트 불러오기 -->
   <style>
     /* Spoqa Han Sans 불러오기 */
@@ -100,9 +102,9 @@
       <div>
         <h1 class="text-lg font-bold text-neutral-900 flex items-center gap-2 flex-wrap">
           위키백과 선거 인포박스 빌더
-          <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-extrabold tracking-wider">v4.3 NEUTRAL</span>
+          <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-extrabold tracking-wider">v4.4 PRO</span>
         </h1>
-        <p class="text-xs text-neutral-500">정치 중립적 가상 프리셋 • 이미지 파일 업로드 & 링크 완벽 지원</p>
+        <p class="text-xs text-neutral-500">정치 중립적 가상 프리셋 • 이미지 파일 업로드 & 링크 및 실시간 이미지 저장 지원</p>
       </div>
     </div>
 
@@ -505,15 +507,23 @@
           <span class="text-xs text-neutral-400 italic">Scale: 100% Real Standard Desktop</span>
         </div>
 
-        <!-- 인포박스 가로 너비 실시간 연동 컨트롤러 바 (PC 타깃 최적화) -->
-        <div class="w-full max-w-[320px] mb-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-neutral-50 p-2.5 rounded-lg border border-neutral-200 shadow-sm" id="infobox-width-controller">
-          <div class="flex items-center gap-1.5">
-            <span class="text-xs font-bold text-neutral-700">📏 가로 너비 (PC):</span>
-            <input type="number" id="input-previewWidth" min="260" max="600" step="5" value="320" oninput="changePreviewWidth(this.value)" class="w-16 px-1.5 py-1 text-xs text-center font-bold text-neutral-800 bg-white border border-neutral-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm">
-            <span class="text-xs font-semibold text-neutral-400">px</span>
+        <!-- 인포박스 조작 및 다운로드 대시보드 구조 정렬 -->
+        <div class="w-full max-w-[320px] mb-3 space-y-2">
+          <!-- 인포박스 가로 너비 실시간 연동 컨트롤러 바 (PC 타깃 최적화) -->
+          <div class="w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-neutral-50 p-2.5 rounded-lg border border-neutral-200 shadow-sm" id="infobox-width-controller">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-neutral-700">📏 가로 너비:</span>
+              <input type="number" id="input-previewWidth" min="260" max="600" step="5" value="320" oninput="changePreviewWidth(this.value)" class="w-16 px-1.5 py-1 text-xs text-center font-bold text-neutral-800 bg-white border border-neutral-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm">
+              <span class="text-xs font-semibold text-neutral-400">px</span>
+            </div>
+            <!-- 보조 슬라이더 연동 -->
+            <input type="range" id="input-previewWidthRange" min="260" max="600" step="5" value="320" oninput="changePreviewWidth(this.value)" class="flex-1 h-1.5 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
           </div>
-          <!-- 보조 슬라이더 연동 -->
-          <input type="range" id="input-previewWidthRange" min="260" max="600" step="5" value="320" oninput="changePreviewWidth(this.value)" class="flex-1 h-1.5 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+
+          <!-- 이미지 저장 도구 통합 탑재 -->
+          <button onclick="downloadInfoboxAsImage()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-lg transition active:scale-[0.98] shadow-sm flex items-center justify-center gap-1.5">
+            🖼️ 완성된 인포박스 이미지 저장 (PNG)
+          </button>
         </div>
 
         <!-- 위키백과 인포박스 렌더 기어 -->
@@ -1258,7 +1268,7 @@
           loadedState.candidateFieldsConfig = [
             { id: "image", label: "프로필 이미지", type: "image" },
             { id: "alliance", label: "소속 연합(Alliance)", type: "text" },
-            { id: "lastElection", label: "이전 선거 의석(Last election)", type: "text" },
+            { id: "lastElection", label: "이전 선거 의석(Last election)", text: "text" },
             { id: "seatsWon", label: "획득 의석수(Seats won)", type: "text" },
             { id: "seatChange", label: "의석수 증감(Seat change)", type: "text" },
             { id: "constituencyVote", label: "지역구 표수", type: "text" },
@@ -2252,6 +2262,39 @@
       triggerToast(`미리보기 서체가 전환되었습니다.`);
     }
 
+    // [핵심 인포박스 이미지 변환 모듈] 
+    function downloadInfoboxAsImage() {
+      const target = document.getElementById("wikipedia-preview-box");
+      if (!target) return;
+
+      triggerToast("📷 이미지 변환 중... 잠시만 기다려주세요.");
+
+      // html2canvas 변환 옵션 (2배수 선명화 및 외부 도메인 사진 완벽 지원)
+      html2canvas(target, {
+        useCORS: true, 
+        allowTaint: true,
+        backgroundColor: "#f8f9fa", // 위키백과 인포박스 본연의 라이트 그레이 톤 매핑
+        scale: 2 // 선명한 위키 표 및 한글 폰트 구현을 위한 2배 스케일업 처리
+      }).then(canvas => {
+        try {
+          const link = document.createElement("a");
+          const safeName = state.electionName ? state.electionName.replace(/\s+/g, '_') : 'election_infobox';
+          link.download = `${safeName}.png`;
+          link.href = canvas.toDataURL("image/png");
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          triggerToast("🎉 인포박스가 PNG 이미지 파일로 안전하게 저장되었습니다!");
+        } catch (err) {
+          console.error(err);
+          triggerToast("❌ 이미지 저장 중 오류가 발생했습니다.");
+        }
+      }).catch(err => {
+        console.error(err);
+        triggerToast("❌ 이미지 컴파일 도중 변환 실패오류 발생.");
+      });
+    }
+
     function triggerToast(message) {
       const toast = document.getElementById("toast");
       const txt = document.getElementById("toast-text");
@@ -2262,7 +2305,7 @@
         setTimeout(() => {
           toast.classList.remove("opacity-100");
           toast.classList.add("opacity-0", "pointer-events-none");
-        }, 2000);
+        }, 2200);
       }
     }
   </script>
