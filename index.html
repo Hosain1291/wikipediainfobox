@@ -102,9 +102,9 @@
       <div>
         <h1 class="text-lg font-bold text-neutral-900 flex items-center gap-2 flex-wrap">
           위키백과 선거 인포박스 빌더
-          <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-extrabold tracking-wider">v4.4 PRO</span>
+          <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-extrabold tracking-wider">v4.6 PRO</span>
         </h1>
-        <p class="text-xs text-neutral-500">정치 중립적 가상 프리셋 • 이미지 파일 업로드 & 링크 및 실시간 이미지 저장 지원</p>
+        <p class="text-xs text-neutral-500">실시간 이미지 저장 • 인적사항 상세 에디터 잠김 버그 완전 해결 빌드</p>
       </div>
     </div>
 
@@ -158,7 +158,7 @@
         <button onclick="loadPreset('ko_leg_2024_fictional')" class="text-xs bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold px-2 py-1.5 rounded transition">
           🏛️ '24 가상 총선
         </button>
-        <button onclick="loadPreset('ko_pres_2025_fictional')" class="text-xs bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold px-2 py-1.5 rounded transition">
+        <button onclick="loadPreset('ko_pres_2025_fictional')" class="text-xs bg-red-600 hover:bg-red-700 text-white font-extrabold px-3 py-1.5 rounded transition shadow-sm">
           👤 '25 가상 대선
         </button>
       </div>
@@ -344,9 +344,14 @@
               <div class="p-3 bg-neutral-100 rounded-lg border border-neutral-200 space-y-3">
                 <div class="flex justify-between items-center border-b border-neutral-300 pb-1.5">
                   <span class="block text-xs font-bold text-neutral-700">📋 후보 정보 필드 구성 양식</span>
-                  <button onclick="addCandidateField()" class="text-[10px] bg-neutral-800 hover:bg-neutral-900 text-white font-bold px-2 py-1 rounded transition">
-                    + 새 필드 추가
-                  </button>
+                  <div class="flex gap-1">
+                    <button onclick="resetFieldsToDefault()" class="text-[10px] bg-red-100 hover:bg-red-200 text-red-700 font-bold px-2 py-1 rounded transition shadow-sm">
+                      🔄 기본값 리셋
+                    </button>
+                    <button onclick="addCandidateField()" class="text-[10px] bg-neutral-800 hover:bg-neutral-900 text-white font-bold px-2 py-1 rounded transition">
+                      + 새 필드 추가
+                    </button>
+                  </div>
                 </div>
                 <div id="candidate-fields-config-list" class="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
                   <!-- JS 동적 생성 -->
@@ -354,7 +359,7 @@
               </div>
 
               <!-- 현재 후보자 상세 수치 데이터 입력 영역 -->
-              <div class="p-3 bg-white rounded-lg border border-neutral-200 space-y-3">
+              <div class="p-3 bg-white rounded-lg border border-neutral-200 space-y-3 shadow-inner">
                 <div class="text-xs font-bold text-neutral-600 uppercase tracking-wider flex items-center gap-1.5 border-b border-neutral-200 pb-1.5">
                   📝 상세 정보 입력란 (마크업 지원)
                 </div>
@@ -714,7 +719,7 @@
     // 위키백과 마크업 리치 텍스트 파싱 전용 모터 함수
     function parseWikipediaMarkup(text) {
       if (!text) return "";
-      let parsed = text;
+      let parsed = String(text);
       
       // 1. '''bold''' -> <strong>bold</strong>
       parsed = parsed.replace(/'''(.*?)'''/g, '<strong>$1</strong>');
@@ -743,7 +748,7 @@
       return parsed;
     }
 
-    // [정치 중립 100% 가상 공화국 데이터로 전면 패치 완료]
+    // [정치 중립 100% 가상 공화국 데이터 패치 완벽 매칭]
     const PRESETS = {
       ko_referendum_quebec_1995: {
         electionType: "referendum",
@@ -807,7 +812,6 @@
         ],
         candidates: []
       },
-      // [정치적 논쟁 차단용 완벽 가상 지방선거 스키마로 개편]
       ko_local_2026_fictional: {
         electionType: "local",
         electionName: "2026년 제9회 가상 대한민국 지방선거",
@@ -871,7 +875,6 @@
           }
         ]
       },
-      // [정치적 논쟁 차단용 완벽 가상 의회 총선 스키마로 개편]
       ko_leg_2024_fictional: {
         electionType: "legislative",
         electionName: "2024년 가상 공화국 국회의원 선거",
@@ -941,7 +944,6 @@
           }
         ]
       },
-      // [정치적 논쟁 차단용 완벽 가상 대통령 대선 스키마로 개편]
       ko_pres_2025_fictional: {
         electionType: "presidential",
         electionName: "2025년 가상 연합공화국 대통령 선거",
@@ -1013,7 +1015,7 @@
 
     // 애플리케이션 라이브 상태 데이터
     let state = {
-      electionType: "referendum",
+      electionType: "presidential",
       electionName: "",
       country: "대한민국",
       electionDate: "",
@@ -1045,8 +1047,8 @@
 
     // 초기 기동 함수
     window.onload = function() {
-      // 기본값으로 1995년 퀘벡 국민투표 고증 데이터 탑재
-      loadPresetData(PRESETS.ko_referendum_quebec_1995);
+      // 기본값으로 2025 가상 대선 프리셋 탑재
+      loadPresetData(PRESETS.ko_pres_2025_fictional);
       bindInputEvents();
     };
 
@@ -1096,7 +1098,7 @@
       if (colorText) {
         colorText.addEventListener("input", function(e) {
           const val = e.target.value;
-          if (val.startsWith("#") && val.length === 7) {
+          if (val && String(val).startsWith("#") && String(val).length === 7) {
             if (colorPicker) colorPicker.value = val;
             updateActiveCandidateValue("color", val);
             updateCandidateTabStyling(state.editingCandidateId, val);
@@ -1105,7 +1107,6 @@
       }
     }
 
-    // [중요 수정] 실시간 입력 감지 이벤트 바인딩 시 트림 처리 후 렌더 업데이트 연동
     function bindField(elemId, stateKey) {
       const el = document.getElementById(elemId);
       if (el) {
@@ -1123,7 +1124,7 @@
         el.addEventListener("input", function(e) {
           updateActiveCandidateValue(fieldKey, e.target.value);
           if (fieldKey === "name" || fieldKey === "party") {
-            updateCandidateTabLabel(state.editingCandidateId, state.candidates.find(c => c.id === state.editingCandidateId));
+            updateCandidateTabLabel(state.editingCandidateId, state.candidates.find(c => String(c.id) === String(state.editingCandidateId)));
           }
         });
       }
@@ -1213,6 +1214,16 @@
       }
     }
 
+    // 선거 타입 강제 초기화 수동 기어
+    function resetFieldsToDefault() {
+      autoConfigFieldsForType(state.electionType);
+      renderCandidateFieldsConfigForm();
+      renderCandidateFieldValuesForm();
+      updatePreview();
+      updateMarkup();
+      triggerToast("후보 정보 기입란 구성이 선거 기본 포맷으로 리셋되었습니다.");
+    }
+
     function toggleElectionTypeUI() {
       const headerTitle = document.getElementById("candidate-tab-name-header");
       const sectionTitle = document.getElementById("candidates-section-title");
@@ -1241,7 +1252,7 @@
         if (sectionTitle) sectionTitle.innerHTML = `<span class="w-2.5 h-2.5 bg-blue-600 rounded-full inline-block"></span> 후보자 및 정당 목록 편집`;
         if (candBtn) candBtn.classList.remove("hidden");
         if (candTabs) candTabs.classList.remove("hidden");
-        if (candEditor) candEditor.classList.add("hidden");
+        if (candEditor) candEditor.classList.remove("hidden");
 
         if (referendumQuestionArea) referendumQuestionArea.classList.add("hidden");
         if (referendumChoicesEditor) referendumChoicesEditor.classList.add("hidden");
@@ -1254,86 +1265,101 @@
       const preset = PRESETS[presetKey];
       if (preset) {
         loadPresetData(preset);
-        triggerToast(`"${preset.electionName}" 데이터가 안전하게 적용되었습니다.`);
+        triggerToast(`"${preset.electionName}" 데이터가 로드되었습니다.`);
       }
     }
 
     function normalizeState(loadedState) {
-      if (loadedState.electionType === "referendum") {
-        if (!loadedState.referendumChoices) loadedState.referendumChoices = [];
-        if (!loadedState.referendumQuestion) loadedState.referendumQuestion = "Do you agree that Quebec should become sovereign...?";
-      }
+      try {
+        if (!loadedState) return loadedState;
 
-      if (!loadedState.candidateFieldsConfig || loadedState.candidateFieldsConfig.length === 0) {
-        if (loadedState.electionType === "legislative") {
-          loadedState.candidateFieldsConfig = [
-            { id: "image", label: "프로필 이미지", type: "image" },
-            { id: "alliance", label: "소속 연합(Alliance)", type: "text" },
-            { id: "lastElection", label: "이전 선거 의석(Last election)", text: "text" },
-            { id: "seatsWon", label: "획득 의석수(Seats won)", type: "text" },
-            { id: "seatChange", label: "의석수 증감(Seat change)", type: "text" },
-            { id: "constituencyVote", label: "지역구 표수", type: "text" },
-            { id: "constituencyPercent", label: "지역구 득표율 & Swing", type: "text" },
-            { id: "regionalVote", label: "비례대표 표수", type: "text" },
-            { id: "regionalPercent", label: "비례대표 득표율 & Swing", type: "text" }
-          ];
-        } else if (loadedState.electionType === "local") {
-          loadedState.candidateFieldsConfig = [
-            { id: "image", label: "프로필 이미지", type: "image" },
-            { id: "regionalSeatsLast", label: "직전 선거 광역의석", type: "text" },
-            { id: "municipalSeatsLast", label: "직전 선거 기초의석", type: "text" },
-            { id: "regionalSeatsWon", label: "획득 광역의석", type: "text" },
-            { id: "municipalSeatsWon", label: "획득 기초의석", type: "text" },
-            { id: "regionalSeatsChange", label: "광역의석 증감", type: "text" },
-            { id: "municipalSeatsChange", label: "기초의석 증감", type: "text" }
-          ];
-        } else if (loadedState.electionType === "next_legislative") {
-          loadedState.candidateFieldsConfig = [
-            { id: "seatsWon", label: "현재 의석", type: "text" }
-          ];
-        } else if (loadedState.electionType !== "referendum") {
-          loadedState.candidateFieldsConfig = [
-            { id: "image", label: "프로필 이미지", type: "image" },
-            { id: "votes", label: "득표수", type: "text" },
-            { id: "percentage", label: "득표율", type: "text" }
-          ];
+        if (loadedState.electionType === "referendum") {
+          if (!loadedState.referendumChoices) loadedState.referendumChoices = [];
+          if (!loadedState.referendumQuestion) loadedState.referendumQuestion = "Do you agree that Quebec should become sovereign...?";
         }
-      }
 
-      if (loadedState.candidateFieldsConfig) {
-        loadedState.candidateFieldsConfig.forEach(cfg => {
-          if (!cfg.type) {
-            cfg.type = (cfg.id === "image" || cfg.label.includes("이미지") || cfg.label.includes("사진")) ? "image" : "text";
+        if (!loadedState.candidateFieldsConfig || loadedState.candidateFieldsConfig.length === 0) {
+          if (loadedState.electionType === "legislative") {
+            loadedState.candidateFieldsConfig = [
+              { id: "image", label: "프로필 이미지", type: "image" },
+              { id: "alliance", label: "소속 연합(Alliance)", type: "text" },
+              { id: "lastElection", label: "이전 선거 의석(Last election)", type: "text" },
+              { id: "seatsWon", label: "획득 의석수(Seats won)", type: "text" },
+              { id: "seatChange", label: "의석수 증감(Seat change)", type: "text" },
+              { id: "constituencyVote", label: "지역구 표수", type: "text" },
+              { id: "constituencyPercent", label: "지역구 득표율 & Swing", type: "text" },
+              { id: "regionalVote", label: "비례대표 표수", type: "text" },
+              { id: "regionalPercent", label: "비례대표 득표율 & Swing", type: "text" }
+            ];
+          } else if (loadedState.electionType === "local") {
+            loadedState.candidateFieldsConfig = [
+              { id: "image", label: "프로필 이미지", type: "image" },
+              { id: "regionalSeatsLast", label: "직전 선거 광역의석", type: "text" },
+              { id: "municipalSeatsLast", label: "직전 선거 기초의석", type: "text" },
+              { id: "regionalSeatsWon", label: "획득 광역의석", type: "text" },
+              { id: "municipalSeatsWon", label: "획득 기초의석", type: "text" },
+              { id: "regionalSeatsChange", label: "광역의석 증감", type: "text" },
+              { id: "municipalSeatsChange", label: "기초의석 증감", type: "text" }
+            ];
+          } else if (loadedState.electionType === "next_legislative") {
+            loadedState.candidateFieldsConfig = [
+              { id: "seatsWon", label: "현재 의석", type: "text" }
+            ];
+          } else if (loadedState.electionType !== "referendum") {
+            loadedState.candidateFieldsConfig = [
+              { id: "image", label: "프로필 이미지", type: "image" },
+              { id: "votes", label: "득표수", type: "text" },
+              { id: "percentage", label: "득표율", type: "text" }
+            ];
           }
-        });
-      }
+        }
 
-      if (loadedState.candidates) {
-        loadedState.candidates.forEach(c => {
-          if (!c.fieldValues) {
-            c.fieldValues = {};
-          }
-          if (c.image !== undefined) c.fieldValues["image"] = c.image;
-          if (c.votes !== undefined) c.fieldValues["votes"] = c.votes;
-          if (c.percentage !== undefined) c.fieldValues["percentage"] = c.percentage;
-
-          if (c.regionalSeatsLast !== undefined) c.fieldValues["regionalSeatsLast"] = c.regionalSeatsLast;
-          if (c.municipalSeatsLast !== undefined) c.fieldValues["municipalSeatsLast"] = c.municipalSeatsLast;
-          if (c.regionalSeatsWon !== undefined) c.fieldValues["regionalSeatsWon"] = c.regionalSeatsWon;
-          if (c.municipalSeatsWon !== undefined) c.fieldValues["municipalSeatsWon"] = c.municipalSeatsWon;
-          if (c.regionalSeatsChange !== undefined) c.fieldValues["regionalSeatsChange"] = c.regionalSeatsChange;
-          if (c.municipalSeatsChange !== undefined) c.fieldValues["municipalSeatsChange"] = c.municipalSeatsChange;
-
-          if (c.legislativeValues) {
-            Object.keys(c.legislativeValues).forEach(k => {
-              c.fieldValues[k] = c.legislativeValues[k];
-            });
-          }
-
-          ["alliance", "lastElection", "seatsWon", "seatChange", "constituencyVote", "constituencyPercent", "regionalVote", "regionalPercent"].forEach(k => {
-            if (c[k] !== undefined) c.fieldValues[k] = c[k];
+        if (loadedState.candidateFieldsConfig) {
+          loadedState.candidateFieldsConfig.forEach(cfg => {
+            if (cfg) {
+              if (!cfg.type) {
+                cfg.type = (cfg.id === "image" || (cfg.label && (cfg.label.includes("이미지") || cfg.label.includes("사진")))) ? "image" : "text";
+              }
+              if (!cfg.label) {
+                cfg.label = "새 상세 필드";
+              }
+            }
           });
-        });
+        }
+
+        if (loadedState.candidates) {
+          loadedState.candidates.forEach(c => {
+            if (c) {
+              if (!c.fieldValues) {
+                c.fieldValues = {};
+              }
+              if (c.id !== undefined) c.id = String(c.id);
+
+              if (c.image !== undefined) c.fieldValues["image"] = c.image;
+              if (c.votes !== undefined) c.fieldValues["votes"] = c.votes;
+              if (c.percentage !== undefined) c.fieldValues["percentage"] = c.percentage;
+
+              if (c.regionalSeatsLast !== undefined) c.fieldValues["regionalSeatsLast"] = c.regionalSeatsLast;
+              if (c.municipalSeatsLast !== undefined) c.fieldValues["municipalSeatsLast"] = c.municipalSeatsLast;
+              if (c.regionalSeatsWon !== undefined) c.fieldValues["regionalSeatsWon"] = c.regionalSeatsWon;
+              if (c.municipalSeatsWon !== undefined) c.fieldValues["municipalSeatsWon"] = c.municipalSeatsWon;
+              if (c.regionalSeatsChange !== undefined) c.fieldValues["regionalSeatsChange"] = c.regionalSeatsChange;
+              if (c.municipalSeatsChange !== undefined) c.fieldValues["municipalSeatsChange"] = c.municipalSeatsChange;
+
+              if (c.legislativeValues) {
+                Object.keys(c.legislativeValues).forEach(k => {
+                  c.fieldValues[k] = c.legislativeValues[k];
+                });
+              }
+
+              ["alliance", "lastElection", "seatsWon", "seatChange", "constituencyVote", "constituencyPercent", "regionalVote", "regionalPercent"].forEach(k => {
+                if (c[k] !== undefined) c.fieldValues[k] = c[k];
+              });
+            }
+          });
+        }
+      } catch (err) {
+        console.error("normalizeState 오류 복구:", err);
       }
 
       return loadedState;
@@ -1366,14 +1392,14 @@
       state.candidates = normalized.candidates || [];
       state.referendumQuestion = normalized.referendumQuestion || "";
       state.referendumChoices = normalized.referendumChoices || [];
-      state.editingCandidateId = state.candidates.length > 0 ? state.candidates[0].id : "1";
+      state.editingCandidateId = state.candidates.length > 0 ? String(state.candidates[0].id) : "1";
 
       const typeInput = document.getElementById("input-electionType");
       if (typeInput) typeInput.value = state.electionType;
 
       setElementValue("input-electionName", state.electionName);
       
-      if (state.flagImage.startsWith("data:image")) {
+      if (state.flagImage && String(state.flagImage).startsWith("data:image")) {
         setElementValue("input-flagImage", "[로컬 업로드 사진] 복구 완료");
       } else {
         setElementValue("input-flagImage", state.flagImage);
@@ -1393,7 +1419,7 @@
       setElementValue("input-afterElection", state.afterElection);
       setElementValue("input-afterParty", state.afterParty);
       
-      if (state.mapImage.startsWith("data:image")) {
+      if (state.mapImage && String(state.mapImage).startsWith("data:image")) {
         setElementValue("input-mapImage", "[로컬 업로드 사진] 복구 완료");
       } else {
         setElementValue("input-mapImage", state.mapImage);
@@ -1441,7 +1467,7 @@
         btn.id = `cand-tab-btn-${c.id}`;
         btn.onclick = () => selectCandidate(c.id);
         
-        const activeClass = state.editingCandidateId === c.id 
+        const activeClass = String(state.editingCandidateId) === String(c.id) 
           ? 'bg-blue-600 text-white border-blue-600' 
           : 'bg-neutral-100 text-neutral-600 border-neutral-200 hover:bg-neutral-200';
         
@@ -1472,31 +1498,41 @@
     }
 
     function selectCandidate(id) {
-      state.editingCandidateId = id;
+      state.editingCandidateId = String(id);
       renderCandidateTabs();
       loadActiveCandidateToForm();
     }
 
     function loadActiveCandidateToForm() {
-      const cand = state.candidates.find(c => c.id === state.editingCandidateId);
-      if (!cand) return;
+      try {
+        const cand = state.candidates.find(c => String(c.id) === String(state.editingCandidateId));
+        if (!cand) {
+          if (state.candidates.length > 0) {
+            state.editingCandidateId = String(state.candidates[0].id);
+            loadActiveCandidateToForm();
+          }
+          return;
+        }
 
-      const indicator = document.getElementById("editor-cand-indicator");
-      if (indicator) {
-        indicator.style.backgroundColor = cand.color;
+        const indicator = document.getElementById("editor-cand-indicator");
+        if (indicator) {
+          indicator.style.backgroundColor = cand.color || "#808080";
+        }
+
+        setElementValue("cand-name", cand.name || "");
+        setElementValue("cand-party", cand.party || "");
+        setElementValue("cand-color-picker", cand.color || "#808080");
+        setElementValue("cand-color-text", cand.color || "#808080");
+
+        renderCandidateFieldsConfigForm();
+        renderCandidateFieldValuesForm();
+      } catch (err) {
+        console.error("loadActiveCandidateToForm 오류 발생:", err);
       }
-
-      setElementValue("cand-name", cand.name || "");
-      setElementValue("cand-party", cand.party || "");
-      setElementValue("cand-color-picker", cand.color || "#808080");
-      setElementValue("cand-color-text", cand.color || "#808080");
-
-      renderCandidateFieldsConfigForm();
-      renderCandidateFieldValuesForm();
     }
 
     function updateActiveCandidateValue(key, value) {
-      const cand = state.candidates.find(c => c.id === state.editingCandidateId);
+      const cand = state.candidates.find(c => String(c.id) === String(state.editingCandidateId));
       if (cand) {
         cand[key] = value;
         updatePreview();
@@ -1550,6 +1586,7 @@
       const f = state.candidateFieldsConfig.find(cfg => cfg.id === id);
       if (f) {
         f.label = newLabel;
+        renderCandidateFieldValuesForm();
         updatePreview();
         updateMarkup();
       }
@@ -1567,7 +1604,7 @@
     }
 
     function updateCandidateFieldValue(fieldId, val) {
-      const cand = state.candidates.find(c => c.id === state.editingCandidateId);
+      const cand = state.candidates.find(c => String(c.id) === String(state.editingCandidateId));
       if (cand) {
         if (!cand.fieldValues) cand.fieldValues = {};
         cand.fieldValues[fieldId] = val;
@@ -1583,6 +1620,7 @@
       if (!state.candidateFieldsConfig) state.candidateFieldsConfig = [];
 
       state.candidateFieldsConfig.forEach(field => {
+        if (!field) return;
         const div = document.createElement("div");
         div.className = "flex gap-2 items-center p-1.5 bg-neutral-50 rounded border border-neutral-200 text-xs shadow-sm";
         div.innerHTML = `
@@ -1598,52 +1636,57 @@
     }
 
     function renderCandidateFieldValuesForm() {
-      const container = document.getElementById("candidate-field-values-list");
-      if (!container) return;
-      container.innerHTML = "";
-      
-      const cand = state.candidates.find(c => c.id === state.editingCandidateId);
-      if (!cand) return;
-      if (!cand.fieldValues) cand.fieldValues = {};
-
-      if (!state.candidateFieldsConfig || state.candidateFieldsConfig.length === 0) {
-        container.innerHTML = `<p class="text-xs text-neutral-400 italic py-3 text-center">등록된 상세 필드가 없습니다.</p>`;
-        return;
-      }
-
-      state.candidateFieldsConfig.forEach(field => {
-        const val = cand.fieldValues[field.id] || "";
-        const div = document.createElement("div");
-        div.className = "space-y-1 bg-neutral-50 p-2.5 rounded border border-neutral-200";
+      try {
+        const container = document.getElementById("candidate-field-values-list");
+        if (!container) return;
+        container.innerHTML = "";
         
-        let labelDesc = field.type === 'image' ? '📷 이미지 설정 (파일 업로드 또는 주소 링크)' : '✍️ 텍스트 정보 입력';
-        let placeholderVal = field.type === 'image' ? '웹 이미지 주소(URL) 입력' : `${field.label} 값 기입`;
-        let displayVal = val.startsWith("data:image") ? "[로컬 업로드 사진] 완료" : val;
+        const cand = state.candidates.find(c => String(c.id) === String(state.editingCandidateId));
+        if (!cand) return;
+        if (!cand.fieldValues) cand.fieldValues = {};
 
-        let inputHtml = "";
-        if (field.type === 'image') {
-          inputHtml = `
-            <div class="flex gap-2">
-              <input type="text" id="input-val-${field.id}" value="${displayVal}" oninput="updateCandidateFieldValue('${field.id}', this.value)" class="flex-1 px-2.5 py-1.5 border border-neutral-300 rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="${placeholderVal}">
-              <button onclick="triggerCandidateImageUpload('${field.id}')" class="bg-neutral-800 hover:bg-neutral-900 text-white font-bold px-2.5 py-1.5 rounded text-[11px] transition whitespace-nowrap active:scale-95">📁 파일 올리기</button>
-              <input type="file" id="file-${field.id}" accept="image/*" class="hidden" onchange="uploadCandidateImage(event, '${field.id}')">
-            </div>
-          `;
-        } else {
-          inputHtml = `
-            <input type="text" value="${val}" oninput="updateCandidateFieldValue('${field.id}', this.value)" class="w-full px-2.5 py-1.5 border border-neutral-300 rounded text-xs bg-white focus:outline-none transition font-sans" placeholder="${placeholderVal}">
-          `;
+        if (!state.candidateFieldsConfig || state.candidateFieldsConfig.length === 0) {
+          container.innerHTML = `<p class="text-xs text-neutral-400 italic py-3 text-center">등록된 상세 필드가 없습니다.</p>`;
+          return;
         }
 
-        div.innerHTML = `
-          <div class="flex justify-between items-center mb-1">
-            <label class="block text-[11px] font-bold text-neutral-600">${field.label}</label>
-            <span class="text-[9px] text-neutral-400 font-medium">${labelDesc}</span>
-          </div>
-          ${inputHtml}
-        `;
-        container.appendChild(div);
-      });
+        state.candidateFieldsConfig.forEach(field => {
+          if (!field) return;
+          const val = String(cand.fieldValues[field.id] || "");
+          const div = document.createElement("div");
+          div.className = "space-y-1 bg-neutral-50 p-2.5 rounded border border-neutral-200";
+          
+          let labelDesc = field.type === 'image' ? '📷 이미지 설정 (파일 업로드 또는 주소 링크)' : '✍️ 텍스트 정보 입력';
+          let placeholderVal = field.type === 'image' ? '웹 이미지 주소(URL) 입력' : `${field.label} 값 기입`;
+          let displayVal = val.startsWith("data:image") ? "[로컬 업로드 사진] 완료" : val;
+
+          let inputHtml = "";
+          if (field.type === 'image') {
+            inputHtml = `
+              <div class="flex gap-2">
+                <input type="text" id="input-val-${field.id}" value="${displayVal.replace(/"/g, '&quot;')}" oninput="updateCandidateFieldValue('${field.id}', this.value)" class="flex-1 px-2.5 py-1.5 border border-neutral-300 rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="${placeholderVal}">
+                <button onclick="triggerCandidateImageUpload('${field.id}')" class="bg-neutral-800 hover:bg-neutral-900 text-white font-bold px-2.5 py-1.5 rounded text-[11px] transition whitespace-nowrap active:scale-95">📁 파일 올리기</button>
+                <input type="file" id="file-${field.id}" accept="image/*" class="hidden" onchange="uploadCandidateImage(event, '${field.id}')">
+              </div>
+            `;
+          } else {
+            inputHtml = `
+              <input type="text" value="${val.replace(/"/g, '&quot;')}" oninput="updateCandidateFieldValue('${field.id}', this.value)" class="w-full px-2.5 py-1.5 border border-neutral-300 rounded text-xs bg-white focus:outline-none transition font-sans" placeholder="${placeholderVal}">
+            `;
+          }
+
+          div.innerHTML = `
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-[11px] font-bold text-neutral-600">${field.label}</label>
+              <span class="text-[9px] text-neutral-400 font-medium">${labelDesc}</span>
+            </div>
+            ${inputHtml}
+          `;
+          container.appendChild(div);
+        });
+      } catch (err) {
+        console.error("renderCandidateFieldValuesForm 에러 복구:", err);
+      }
     }
 
     function removeActiveCandidate() {
@@ -1651,8 +1694,8 @@
         triggerToast("최소 1명 이상의 후보가 등록되어 있어야 합니다.");
         return;
       }
-      state.candidates = state.candidates.filter(c => c.id !== state.editingCandidateId);
-      state.editingCandidateId = state.candidates[0].id;
+      state.candidates = state.candidates.filter(c => String(c.id) !== String(state.editingCandidateId));
+      state.editingCandidateId = String(state.candidates[0].id);
       renderCandidateTabs();
       loadActiveCandidateToForm();
       updatePreview();
@@ -1912,10 +1955,8 @@
       candidatesContainer.innerHTML = "";
 
       if (state.electionType === "referendum") {
-        // [중요 개선] 등록된 국민투표 선택지 리스트 중 단 하나라도 투표수(Votes) 데이터가 들어있는지 검증
         const hasVotes = state.referendumChoices && state.referendumChoices.some(choice => choice.votes && choice.votes.trim() !== "");
         
-        // 투표수 정보가 아예 하나도 존재하지 않는다면 '투표수' 열을 감추고 '비율(%)'만 보여주는 2열 구조로 자동 다이내믹 변경
         let tableHtml = `
           <table class="w-full border-collapse text-xs text-left" style="line-height: 1.5; border: 1px solid #a2a9b1;">
             <thead>
@@ -1933,7 +1974,6 @@
             const isTotalRow = choice.label.includes("총") || choice.label.includes("합계") || choice.label.includes("Total") || choice.label.includes("유효") || choice.label.includes("Valid") || choice.label.includes("등록") || choice.label.includes("Registered");
             const rowClass = isTotalRow ? "bg-neutral-50/70 border-t border-neutral-300 font-bold" : "border-b border-neutral-200 hover:bg-neutral-50";
             
-            // 투표수 필드가 단지 공백이거나 비어 있는 경우 0대신 빈 공백 셀 처리
             const votesVal = choice.votes ? choice.votes.trim() : "";
 
             tableHtml += `
@@ -2017,7 +2057,7 @@
               const imgVal = c.fieldValues ? c.fieldValues[firstImgField.id] : "";
               td.innerHTML = `
                 <div class="relative mx-auto flex items-center justify-center" style="width: 85px; height: 105px;">
-                  <img src="${imgVal || ''}" alt="${c.name}" onerror="handleCandidateImageError(this, '${c.name}')" class="w-full h-full object-cover border border-[#a2a9b1] rounded">
+                  <img src="${imgVal || ''}" alt="${c.name || ''}" onerror="handleCandidateImageError(this, '${c.name || ''}')" class="w-full h-full object-cover border border-[#a2a9b1] rounded">
                 </div>
               `;
               trImage.appendChild(td);
@@ -2030,6 +2070,7 @@
           row.forEach(c => {
             const td = document.createElement("td");
             td.className = "p-1.5 text-center align-top border-b border-neutral-200";
+            td.style.width = colWidth;
             
             let leaderTitle = "후보";
             if (state.electionType === "local" || state.electionType === "legislative") {
@@ -2052,6 +2093,7 @@
               row.forEach(c => {
                 const td = document.createElement("td");
                 td.className = "p-1.5 text-center align-middle";
+                td.style.width = colWidth;
                 const val = c.fieldValues ? c.fieldValues[field.id] : "";
                 
                 let styledVal = parseWikipediaMarkup(val) || '-';
