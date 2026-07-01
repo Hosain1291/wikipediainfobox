@@ -471,7 +471,7 @@
         </div>
       </div>
 
-      <!-- 위키백과 마크업 리치 텍스트 서식 가이드 보드 -->
+      <!-- 위키백과 마크업 리치 텍작 서식 가이드 보드 -->
       <div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 space-y-3">
         <h3 class="font-bold text-neutral-900 text-sm flex items-center gap-1.5 border-b pb-2">
           <span class="w-2.5 h-2.5 bg-neutral-700 rounded-full inline-block"></span>
@@ -1632,7 +1632,7 @@
           if (field.type === 'image') {
             inputHtml = `
               <div class="flex gap-2">
-                <input type="text" id="input-val-${field.id}" value="${displayVal.replace(/"/g, '&quot;')}" oninput="updateCandidateFieldValue('${field.id}', this.value)" class="flex-1 px-2.5 py-1.5 border border-neutral-300 rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="${placeholderVal}">
+                <input type="text" id="input-val-${field.id}" value="${displayVal.replace(/"/g, '&quot;')}" oninput="updateCandidateFieldValue('${field.id}', this.value)" class="flex-1 px-2.5 py-1.5 border border-neutral-300 rounded text-xs bg-white focus:outline-none">
                 <button onclick="triggerCandidateImageUpload('${field.id}')" class="bg-neutral-800 hover:bg-neutral-900 text-white font-bold px-2.5 py-1.5 rounded text-[11px] transition whitespace-nowrap active:scale-95">📁 파일 올리기</button>
                 <input type="file" id="file-${field.id}" accept="image/*" class="hidden" onchange="uploadCandidateImage(event, '${field.id}')">
               </div>
@@ -1721,7 +1721,7 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-[9px] text-neutral-400 font-bold">투표수 (Votes)</label>
-              <input type="text" value="${choice.votes}" oninput="updateReferendumChoiceData('${choice.id}', 'votes', this.value)" class="w-full p-1 border border-neutral-300 rounded text-xs bg-neutral-50 focus:bg-white focus:outline-none" placeholder="투표수 미기입 시 공백">
+              <input type="text" value="${choice.votes}" oninput="updateReferendumChoiceData('${choice.id}', 'votes', this.value)" class="w-full p-1 border border-neutral-300 rounded text-xs bg-neutral-50 focus:bg-white focus:outline-none">
             </div>
             <div>
               <label class="block text-[9px] text-neutral-400 font-bold">비율 (%)</label>
@@ -2065,7 +2065,7 @@
             tbody.appendChild(trImage);
           }
 
-          // 2. 인물 성명 행 (레이블: 대표 또는 후보)
+          // 2. 인물 성명 행 (레이블: 대표 혹은 후보)
           const trName = document.createElement("tr");
           trName.className = "border-b border-[#a2a9b1] bg-neutral-50/50";
           
@@ -2285,6 +2285,24 @@
         code += `\n}}`;
       }
       outBox.value = code;
+    }
+
+    function switchEditorTab(tabName) {
+      state.activeTab = tabName;
+      const tabs = ["meta", "candidates", "outcome"];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const sect = document.getElementById(`editor-section-${t}`);
+        if (btn && sect) {
+          if (t === tabName) {
+            btn.className = "flex-1 py-3 px-1 text-center transition-all border-b-2 border-blue-600 text-blue-600 bg-white";
+            sect.classList.remove("hidden");
+          } else {
+            btn.className = "flex-1 py-3 px-1 text-center transition-all border-b-2 border-transparent text-neutral-500 hover:text-neutral-800";
+            sect.classList.add("hidden");
+          }
+        }
+      });
     }
 
     function copyToClipboard() {
