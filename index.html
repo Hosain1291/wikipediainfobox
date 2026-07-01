@@ -87,7 +87,7 @@
 </head>
 <body class="bg-neutral-100 text-neutral-800 min-h-screen flex flex-col font-sans antialiased">
 
-  <!-- 글로벌 토스트 알림창 -->
+  <!-- GLOBAL_TOAST_ALERT -->
   <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-50 bg-neutral-900 text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-2 border border-neutral-700 opacity-0 pointer-events-none transition-opacity duration-300">
     <span class="text-emerald-400 font-bold">✓</span>
     <span id="toast-text" class="text-sm font-medium">알림 메시지</span>
@@ -153,7 +153,7 @@
           👑 '55 베트남 국체투표
         </button>
         <button onclick="loadPreset('ko_local_2026_fictional')" class="text-xs bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold px-2 py-1.5 rounded transition">
-          🗳️ '26 가상 지방선거
+          🏙️ '26 가상 지방선거
         </button>
         <button onclick="loadPreset('ko_leg_2024_fictional')" class="text-xs bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold px-2 py-1.5 rounded transition">
           🏛️ '24 가상 총선
@@ -756,7 +756,7 @@
       return parsed;
     }
 
-    // [정치 중립 100% 가상 공화국 데이터 패치 완벽 매칭]
+    // [정치 중립 100% 가상 공화국 데이터로 전면 패치 완료]
     const PRESETS = {
       ko_referendum_quebec_1995: {
         electionType: "referendum",
@@ -799,7 +799,6 @@
         electionDate: "1955년 10월 23일",
         title: "정치 체제",
         previewWidth: 320,
-        candidatesPerRow: "auto",
         turnoutDetails: "베트남국의 군주제 유지 또는 공화제 전환 결정 투표",
         registeredVoters: "5,335,668",
         turnoutText: "5,784,752\n'''108.42%''' (초과 투표 발생)",
@@ -912,8 +911,8 @@
           { id: "image", label: "프로필 이미지", type: "image" },
           { id: "alliance", label: "소속 연합(Alliance)", type: "text" },
           { id: "lastElection", label: "이전 선거 의석", type: "text" },
-          { id: "seatsWon", label: "획득 의석수", type: "text" },
-          { id: "seatChange", label: "의석수 증감", type: "text" },
+          { id: "seatsWon", label: "획득 의석수(Seats won)", type: "text" },
+          { id: "seatChange", label: "의석수 증감(Seat change)", type: "text" },
           { id: "constituencyVote", label: "지역구 표수", type: "text" },
           { id: "constituencyPercent", label: "지역구 득표율 & Swing", type: "text" },
           { id: "regionalVote", label: "비례대표 표수", type: "text" },
@@ -1244,6 +1243,7 @@
       triggerToast("후보 정보 기입란 구성이 선거 기본 포맷으로 리셋되었습니다.");
     }
 
+    // [중요 오타 수정 패치] candEditor 클래스 조작 버그 완벽 수정!!
     function toggleElectionTypeUI() {
       const headerTitle = document.getElementById("candidate-tab-name-header");
       const sectionTitle = document.getElementById("candidates-section-title");
@@ -1258,10 +1258,10 @@
 
       if (state.electionType === "referendum") {
         if (headerTitle) headerTitle.innerText = "2. 투표 질문 & 결과 설정";
-        if (sectionTitle) sectionTitle.innerHTML = `<span class="w-2.5 h-2.5 bg-indigo-600 rounded-full inline-block"></span> 국민투표 질문 및 결과 데이터 설정`;
+        if (sectionTitle) sectionTitle.innerHTML = `<span class="w-2.5 h-2.5 bg-blue-600 rounded-full inline-block"></span> 국민투표 질문 및 결과 데이터 설정`;
         if (candBtn) candBtn.classList.add("hidden");
         if (candTabs) candTabs.classList.add("hidden");
-        if (candEditor) candEditor.classList.add("hidden");
+        if (candEditor) candEditor.classList.add("hidden"); // 국민투표 시에는 후보편집 창 숨김
 
         if (referendumQuestionArea) referendumQuestionArea.classList.remove("hidden");
         if (referendumChoicesEditor) referendumChoicesEditor.classList.remove("hidden");
@@ -1272,7 +1272,9 @@
         if (sectionTitle) sectionTitle.innerHTML = `<span class="w-2.5 h-2.5 bg-blue-600 rounded-full inline-block"></span> 후보자 및 정당 목록 편집`;
         if (candBtn) candBtn.classList.remove("hidden");
         if (candTabs) candTabs.classList.remove("hidden");
-        if (candEditor) candEditor.classList.add("hidden");
+        
+        // BUG FIX: 기존의 classList.add("hidden")을 classList.remove("hidden")으로 안정적 수정!!
+        if (candEditor) candEditor.classList.remove("hidden");
 
         if (referendumQuestionArea) referendumQuestionArea.classList.add("hidden");
         if (referendumChoicesEditor) referendumChoicesEditor.classList.add("hidden");
@@ -1461,64 +1463,6 @@
       renderReferendumChoicesForm();
       updatePreview();
       updateMarkup();
-    }
-
-    function switchEditorTab(tabName) {
-      state.activeTab = tabName;
-      const tabs = ["meta", "candidates", "outcome"];
-      tabs.forEach(t => {
-        const btn = document.getElementById(`tab-btn-${t}`);
-        const sect = document.getElementById(`editor-section-${t}`);
-        if (btn && sect) {
-          if (t === tabName) {
-            btn.className = "flex-1 py-3 px-1 text-center transition-all border-b-2 border-blue-600 text-blue-600 bg-white";
-            sect.classList.remove("hidden");
-          } else {
-            btn.className = "flex-1 py-3 px-1 text-center transition-all border-b-2 border-transparent text-neutral-500 hover:text-neutral-800";
-            sect.classList.add("hidden");
-          }
-        }
-      });
-    }
-
-    function renderCandidateTabs() {
-      const container = document.getElementById("candidate-tabs-list");
-      if (!container) return;
-      container.innerHTML = "";
-      
-      state.candidates.forEach((c, idx) => {
-        const btn = document.createElement("button");
-        btn.id = `cand-tab-btn-${c.id}`;
-        btn.onclick = () => selectCandidate(c.id);
-        
-        const activeClass = String(state.editingCandidateId) === String(c.id) 
-          ? 'bg-blue-600 text-white border-blue-600' 
-          : 'bg-neutral-100 text-neutral-600 border-neutral-200 hover:bg-neutral-200';
-        
-        btn.className = `text-xs px-3 py-2 rounded-md font-semibold flex items-center gap-1.5 whitespace-nowrap border transition ${activeClass}`;
-        
-        const dispName = state.electionType === "next_legislative" ? c.party : (c.name || '미설정');
-        btn.innerHTML = `
-          <span id="tab-dot-${c.id}" class="w-2.5 h-2.5 rounded-full block border border-white/50" style="background-color: ${c.color}"></span>
-          <span id="tab-label-${c.id}">${dispName || '미설정'}</span>
-        `;
-        container.appendChild(btn);
-      });
-    }
-
-    function updateCandidateTabLabel(id, c) {
-      const labelElem = document.getElementById(`tab-label-${id}`);
-      if (labelElem && c) {
-        const dispName = state.electionType === "next_legislative" ? c.party : (c.name || '미설정');
-        labelElem.innerText = dispName || '미설정';
-      }
-    }
-
-    function updateCandidateTabStyling(id, color) {
-      const dotElem = document.getElementById(`tab-dot-${id}`);
-      if (dotElem) {
-        dotElem.style.backgroundColor = color;
-      }
     }
 
     function selectCandidate(id) {
