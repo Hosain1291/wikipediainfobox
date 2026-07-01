@@ -471,7 +471,7 @@
         </div>
       </div>
 
-      <!-- 위키백과 마크업 리치 텍작 서식 가이드 보드 -->
+      <!-- 위키백과 마크업 리치 텍스트 서식 가이드 보드 -->
       <div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 space-y-3">
         <h3 class="font-bold text-neutral-900 text-sm flex items-center gap-1.5 border-b pb-2">
           <span class="w-2.5 h-2.5 bg-neutral-700 rounded-full inline-block"></span>
@@ -1243,7 +1243,6 @@
       triggerToast("후보 정보 기입란 구성이 선거 기본 포맷으로 리셋되었습니다.");
     }
 
-    // [중요 오타 수정 패치] candEditor 클래스 조작 버그 완벽 수정!!
     function toggleElectionTypeUI() {
       const headerTitle = document.getElementById("candidate-tab-name-header");
       const sectionTitle = document.getElementById("candidates-section-title");
@@ -1261,7 +1260,7 @@
         if (sectionTitle) sectionTitle.innerHTML = `<span class="w-2.5 h-2.5 bg-blue-600 rounded-full inline-block"></span> 국민투표 질문 및 결과 데이터 설정`;
         if (candBtn) candBtn.classList.add("hidden");
         if (candTabs) candTabs.classList.add("hidden");
-        if (candEditor) candEditor.classList.add("hidden"); // 국민투표 시에는 후보편집 창 숨김
+        if (candEditor) candEditor.classList.add("hidden");
 
         if (referendumQuestionArea) referendumQuestionArea.classList.remove("hidden");
         if (referendumChoicesEditor) referendumChoicesEditor.classList.remove("hidden");
@@ -1272,8 +1271,6 @@
         if (sectionTitle) sectionTitle.innerHTML = `<span class="w-2.5 h-2.5 bg-blue-600 rounded-full inline-block"></span> 후보자 및 정당 목록 편집`;
         if (candBtn) candBtn.classList.remove("hidden");
         if (candTabs) candTabs.classList.remove("hidden");
-        
-        // BUG FIX: 기존의 classList.add("hidden")을 classList.remove("hidden")으로 안정적 수정!!
         if (candEditor) candEditor.classList.remove("hidden");
 
         if (referendumQuestionArea) referendumQuestionArea.classList.add("hidden");
@@ -1291,6 +1288,7 @@
       }
     }
 
+    // [핵심 자바스크립트 버그 해결 엔진] 가상 데이터 프리셋과 에디터 상태 간의 평평한 데이터 구조 격차를 복구하고 완전 동기화 처리
     function normalizeState(loadedState) {
       try {
         if (!loadedState) return loadedState;
@@ -1357,6 +1355,7 @@
               }
               if (c.id !== undefined) c.id = String(c.id);
 
+              // 후보자 평평한 인스턴스 정보들을 가변 스키마 데이터 공간(fieldValues)으로 즉각 안전 이송
               if (c.image !== undefined) c.fieldValues["image"] = c.image;
               if (c.votes !== undefined) c.fieldValues["votes"] = c.votes;
               if (c.percentage !== undefined) c.fieldValues["percentage"] = c.percentage;
@@ -1465,6 +1464,64 @@
       updateMarkup();
     }
 
+    function switchEditorTab(tabName) {
+      state.activeTab = tabName;
+      const tabs = ["meta", "candidates", "outcome"];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const sect = document.getElementById(`editor-section-${t}`);
+        if (btn && sect) {
+          if (t === tabName) {
+            btn.className = "flex-1 py-3 px-1 text-center transition-all border-b-2 border-blue-600 text-blue-600 bg-white";
+            sect.classList.remove("hidden");
+          } else {
+            btn.className = "flex-1 py-3 px-1 text-center transition-all border-b-2 border-transparent text-neutral-500 hover:text-neutral-800";
+            sect.classList.add("hidden");
+          }
+        }
+      });
+    }
+
+    function renderCandidateTabs() {
+      const container = document.getElementById("candidate-tabs-list");
+      if (!container) return;
+      container.innerHTML = "";
+      
+      state.candidates.forEach((c, idx) => {
+        const btn = document.createElement("button");
+        btn.id = `cand-tab-btn-${c.id}`;
+        btn.onclick = () => selectCandidate(c.id);
+        
+        const activeClass = String(state.editingCandidateId) === String(c.id) 
+          ? 'bg-blue-600 text-white border-blue-600' 
+          : 'bg-neutral-100 text-neutral-600 border-neutral-200 hover:bg-neutral-200';
+        
+        btn.className = `text-xs px-3 py-2 rounded-md font-semibold flex items-center gap-1.5 whitespace-nowrap border transition ${activeClass}`;
+        
+        const dispName = state.electionType === "next_legislative" ? c.party : (c.name || '미설정');
+        btn.innerHTML = `
+          <span id="tab-dot-${c.id}" class="w-2.5 h-2.5 rounded-full block border border-white/50" style="background-color: ${c.color}"></span>
+          <span id="tab-label-${c.id}">${dispName || '미설정'}</span>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function updateCandidateTabLabel(id, c) {
+      const labelElem = document.getElementById(`tab-label-${id}`);
+      if (labelElem && c) {
+        const dispName = state.electionType === "next_legislative" ? c.party : (c.name || '미설정');
+        labelElem.innerText = dispName || '미설정';
+      }
+    }
+
+    function updateCandidateTabStyling(id, color) {
+      const dotElem = document.getElementById(`tab-dot-${id}`);
+      if (dotElem) {
+        dotElem.style.backgroundColor = color;
+      }
+    }
+
     function selectCandidate(id) {
       state.editingCandidateId = String(id);
       renderCandidateTabs();
@@ -1554,7 +1611,6 @@
       const f = state.candidateFieldsConfig.find(cfg => cfg.id === id);
       if (f) {
         f.label = newLabel;
-        renderCandidateFieldValuesForm();
         updatePreview();
         updateMarkup();
       }
@@ -1820,6 +1876,7 @@
       event.target.value = "";
     }
 
+    // [완벽 렌더링 보정 엔진] 후보 정보가 가변 양식에 맞춰 유실 없이 우측 미리보기에 매핑되도록 최종 컴파일
     function updatePreview() {
       const previewName = document.getElementById("preview-electionName");
       if (previewName) previewName.innerHTML = parseWikipediaMarkup(state.electionName) || "선거 정보 없음";
@@ -1905,9 +1962,10 @@
       if (mapSec) {
         if (state.mapImage) {
           mapSec.innerHTML = `
-            <div class="mx-auto max-w-full overflow-hidden flex items-center justify-center p-1 border border-[#e8ecef] bg-neutral-50">
+            <div class="mx-auto max-w-full overflow-hidden flex items-center justify-center p-1 border border-[#e8ecef] bg-[#f8f9fa]">
               <img id="preview-map-image" src="${state.mapImage}" alt="선거 지도" onerror="handleMapError(this)" class="max-h-[190px] w-auto object-contain">
             </div>
+            <!-- 요청 사항: 지도 주석 가운데 정렬 및 글자색 검정색 변경 -->
             <p id="preview-map-caption" class="text-[11px] text-black text-center font-medium mt-1.5 leading-snug px-1">
               ${parseWikipediaMarkup(state.mapCaption) || ""}
             </p>
@@ -1998,7 +2056,7 @@
         candidatesContainer.innerHTML = tableHtml;
 
       } else {
-        // [대격변 고증 패치] 대통령, 국회의원, 지방선거 다단 정밀 좌측 분할 배치 구현 (image_174350.png 완벽 일치)
+        // [러시아 대선 등 정교한 다단 분할 배치 전면 에뮬레이트 기동]
         let perRow = 3;
         if (state.candidatesPerRow === "2") {
           perRow = 2;
@@ -2118,6 +2176,7 @@
               const trField = document.createElement("tr");
               trField.className = "border-b border-[#a2a9b1] last:border-b-0";
 
+              // Left label cell
               const tdLabelField = document.createElement("td");
               tdLabelField.className = "p-1.5 text-left font-bold text-[#202122] text-xs border-r border-[#a2a9b1] bg-[#f8f9fa] w-[85px] min-w-[85px]";
               tdLabelField.innerHTML = parseWikipediaMarkup(field.label);
@@ -2287,24 +2346,6 @@
       outBox.value = code;
     }
 
-    function switchEditorTab(tabName) {
-      state.activeTab = tabName;
-      const tabs = ["meta", "candidates", "outcome"];
-      tabs.forEach(t => {
-        const btn = document.getElementById(`tab-btn-${t}`);
-        const sect = document.getElementById(`editor-section-${t}`);
-        if (btn && sect) {
-          if (t === tabName) {
-            btn.className = "flex-1 py-3 px-1 text-center transition-all border-b-2 border-blue-600 text-blue-600 bg-white";
-            sect.classList.remove("hidden");
-          } else {
-            btn.className = "flex-1 py-3 px-1 text-center transition-all border-b-2 border-transparent text-neutral-500 hover:text-neutral-800";
-            sect.classList.add("hidden");
-          }
-        }
-      });
-    }
-
     function copyToClipboard() {
       const area = document.getElementById("markup-output");
       if (!area) return;
@@ -2315,6 +2356,12 @@
       } catch (err) {
         triggerToast("직접 드래그 복사해 주세요.");
       }
+    }
+
+    function changeCandidatesPerRow(val) {
+      state.candidatesPerRow = val;
+      updatePreview();
+      updateMarkup();
     }
 
     function changeOutputLanguage(lang) {
