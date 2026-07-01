@@ -8,7 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- html2canvas (HTML 엘리먼트 이미지 저장 라이브러리) CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <!-- 외부 폰트 불러오기 -->
+  <!-- 외부 폰트 불러오기 및 커스텀 디자인 -->
   <style>
     /* Spoqa Han Sans 불러오기 */
     @import url('https://spoqa.github.io/spoqa-han-sans/css/SpoqaHanSans-kr.css');
@@ -153,7 +153,7 @@
           👑 '55 베트남 국체투표
         </button>
         <button onclick="loadPreset('ko_local_2026_fictional')" class="text-xs bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold px-2 py-1.5 rounded transition">
-          🏙️ '26 가상 지방선거
+          🗳️ '26 가상 지방선거
         </button>
         <button onclick="loadPreset('ko_leg_2024_fictional')" class="text-xs bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold px-2 py-1.5 rounded transition">
           🏛️ '24 가상 총선
@@ -193,14 +193,22 @@
                 <span class="w-2.5 h-2.5 bg-blue-600 rounded-full inline-block"></span>
                 선거 기본 메타데이터
               </h3>
-              <!-- 선거 형태 변경 -->
-              <select id="input-electionType" onchange="changeElectionType(this.value)" class="text-xs bg-neutral-100 border border-neutral-300 font-bold rounded p-1 text-neutral-700 focus:ring-1 focus:ring-blue-500">
-                <option value="presidential">대통령 선거 양식</option>
-                <option value="legislative">국회의원 선거 양식</option>
-                <option value="local">지방선거 양식</option>
-                <option value="next_legislative">차기 의원선거(의석수표)</option>
-                <option value="referendum">국민투표 양식</option>
-              </select>
+              <div class="flex gap-1.5 items-center">
+                <!-- 한 행당 후보 수 동적 제어 옵션 (요청 반영) -->
+                <select id="input-candidatesPerRow" onchange="changeCandidatesPerRow(this.value)" class="text-[11px] bg-neutral-100 border border-neutral-300 font-bold rounded p-1 text-neutral-700">
+                  <option value="auto">자동 다단 분할 (Auto)</option>
+                  <option value="2">한 행당 2명씩 배치 (2 cols)</option>
+                  <option value="3">한 행당 3명씩 배치 (3 cols)</option>
+                </select>
+                <!-- 선거 형태 변경 -->
+                <select id="input-electionType" onchange="changeElectionType(this.value)" class="text-[11px] bg-neutral-100 border border-neutral-300 font-bold rounded p-1 text-neutral-700">
+                  <option value="presidential">대통령 선거 양식</option>
+                  <option value="legislative">국회의원 선거 양식</option>
+                  <option value="local">지방선거 양식</option>
+                  <option value="next_legislative">차기 의원선거(의석수표)</option>
+                  <option value="referendum">국민투표 양식</option>
+                </select>
+              </div>
             </div>
 
             <div class="space-y-3">
@@ -759,6 +767,7 @@
         electionDate: "1995년 10월 30일",
         title: "독립 여부",
         previewWidth: 320,
+        candidatesPerRow: "auto",
         turnoutDetails: "퀘벡 주 헌법적 주권국 지위 부여 찬반 여부",
         registeredVoters: "5,087,009",
         turnoutText: "4,757,509\n'''93.52%''' ({{increase}} 14.1pp)",
@@ -790,6 +799,7 @@
         electionDate: "1955년 10월 23일",
         title: "정치 체제",
         previewWidth: 320,
+        candidatesPerRow: "auto",
         turnoutDetails: "베트남국의 군주제 유지 또는 공화제 전환 결정 투표",
         registeredVoters: "5,335,668",
         turnoutText: "5,784,752\n'''108.42%''' (초과 투표 발생)",
@@ -821,6 +831,7 @@
         electionDate: "2026년 6월 3일",
         title: "지방 정부",
         previewWidth: 320,
+        candidatesPerRow: "auto",
         turnoutDetails: "'''16개 광역행정수장'''\n'''933명 광역의원'''\n'''227개 기초지자체장'''\n'''3,034명 기초의원'''",
         registeredVoters: "34,079,860",
         turnoutText: "27,253,457\n'''61.0%''' ({{increase}} 10.1pp)''^[1]''",
@@ -884,6 +895,7 @@
         electionDate: "2024년 4월 10일",
         title: "의회",
         previewWidth: 320,
+        candidatesPerRow: "auto",
         turnoutDetails: "'''국회의원 300석 전체'''\n원내 과반수 기준: '''151석'''",
         registeredVoters: "44,280,011",
         turnoutText: "지역구: '''66.97%''' ({{increase}} 0.77pp)\n비례대표: '''66.99%''' ({{increase}} 0.78pp)",
@@ -953,6 +965,7 @@
         electionDate: "2025년 6월 3일",
         title: "대통령",
         previewWidth: 320,
+        candidatesPerRow: "auto",
         turnoutDetails: "공표 모의 총조사 통계치 기준",
         registeredVoters: "44,391,871",
         turnoutText: "'''79.38%''' ({{increase}} 2.30 pp)",
@@ -1029,6 +1042,7 @@
       mapImage: "",
       mapCaption: "",
       previewWidth: 320,
+      candidatesPerRow: "auto", // 한 행에 배치할 후보의 수 (auto, 2, 3)
       title: "",
       beforeElection: "",
       beforeParty: "",
@@ -1128,6 +1142,12 @@
           }
         });
       }
+    }
+
+    function changeCandidatesPerRow(val) {
+      state.candidatesPerRow = val;
+      updatePreview();
+      updateMarkup();
     }
 
     function changePreviewWidth(val) {
@@ -1252,7 +1272,7 @@
         if (sectionTitle) sectionTitle.innerHTML = `<span class="w-2.5 h-2.5 bg-blue-600 rounded-full inline-block"></span> 후보자 및 정당 목록 편집`;
         if (candBtn) candBtn.classList.remove("hidden");
         if (candTabs) candTabs.classList.remove("hidden");
-        if (candEditor) candEditor.classList.remove("hidden");
+        if (candEditor) candEditor.classList.add("hidden");
 
         if (referendumQuestionArea) referendumQuestionArea.classList.add("hidden");
         if (referendumChoicesEditor) referendumChoicesEditor.classList.add("hidden");
@@ -1382,6 +1402,7 @@
       state.mapImage = normalized.mapImage || "";
       state.mapCaption = normalized.mapCaption || "";
       state.previewWidth = normalized.previewWidth || 320;
+      state.candidatesPerRow = normalized.candidatesPerRow || "auto"; // 행 분할 속성 로드
       state.title = normalized.title;
       state.beforeElection = normalized.beforeElection || "";
       state.beforeParty = normalized.beforeParty || "";
@@ -1396,6 +1417,9 @@
 
       const typeInput = document.getElementById("input-electionType");
       if (typeInput) typeInput.value = state.electionType;
+
+      // 동적 분할 셀렉터 연계 바인딩
+      setElementValue("input-candidatesPerRow", state.candidatesPerRow);
 
       setElementValue("input-electionName", state.electionName);
       
@@ -2030,29 +2054,53 @@
         candidatesContainer.innerHTML = tableHtml;
 
       } else {
-        const table = document.createElement("table");
-        table.className = "w-full border-collapse";
-        table.style.tableLayout = "fixed";
-
-        const tbody = document.createElement("tbody");
-
-        const chunked = [];
-        for (let i = 0; i < state.candidates.length; i += 3) {
-          chunked.push(state.candidates.slice(i, i + 3));
+        // [대격변 고증 패치] 대통령, 국회의원, 지방선거 다단 정밀 좌측 분할 배치 구현 (image_174350.png 완벽 일치)
+        let perRow = 3;
+        if (state.candidatesPerRow === "2") {
+          perRow = 2;
+        } else if (state.candidatesPerRow === "3") {
+          perRow = 3;
+        } else { // "auto"
+          if (state.candidates.length >= 4) {
+            perRow = 2;
+          } else {
+            perRow = 3;
+          }
         }
 
-        chunked.forEach(row => {
-          const colWidth = `${100 / row.length}%`;
+        // 후보자를 정합한 다단 행으로 분할 청킹
+        const chunked = [];
+        for (let i = 0; i < state.candidates.length; i += perRow) {
+          chunked.push(state.candidates.slice(i, i + perRow));
+        }
 
+        chunked.forEach((row, chunkIdx) => {
+          // 행 그룹별 위키백과 미디어위키 공식 고증 서식 테이블 생성
+          const table = document.createElement("table");
+          table.className = "w-full border-collapse border-b border-[#a2a9b1] last:border-b-0";
+          table.style.tableLayout = "fixed";
+
+          const tbody = document.createElement("tbody");
+
+          // 열 폭 가이드 (좌측 레이블은 w-[85px] 고정, 나머지는 후보자 수에 맞추어 균등 분할)
+          const emptyCount = perRow - row.length;
+
+          // 1. 프로필 이미지 행 (구성 중 이미지 타입 필드가 정의되어 있을 때만 기동)
           const imageFields = state.candidateFieldsConfig.filter(f => f.type === "image");
           if (imageFields.length > 0) {
             const firstImgField = imageFields[0];
             const trImage = document.createElement("tr");
+            trImage.className = "border-b border-[#a2a9b1]";
+            
+            // 좌측 헤더 열 (공백)
+            const tdLabelImg = document.createElement("td");
+            tdLabelImg.className = "p-1 w-[85px] min-w-[85px] bg-[#f8f9fa] border-r border-[#a2a9b1]";
+            trImage.appendChild(tdLabelImg);
+
             row.forEach(c => {
               const td = document.createElement("td");
-              td.className = "p-1 text-center align-top border-b-4";
+              td.className = "p-1.5 text-center align-top border-r border-[#a2a9b1] last:border-r-0 border-b-4";
               td.style.borderColor = c.color;
-              td.style.width = colWidth;
               
               const imgVal = c.fieldValues ? c.fieldValues[firstImgField.id] : "";
               td.innerHTML = `
@@ -2062,59 +2110,100 @@
               `;
               trImage.appendChild(td);
             });
+
+            // 짝 안맞는 빈 칸 채우기 패딩TD 주입 (그리드 보존 기술)
+            for (let i = 0; i < emptyCount; i++) {
+              const td = document.createElement("td");
+              td.className = "border-r border-[#a2a9b1] last:border-r-0 bg-white";
+              trImage.appendChild(td);
+            }
+
             tbody.appendChild(trImage);
           }
 
+          // 2. 인물 성명 행 (레이블: 대표 또는 후보)
           const trName = document.createElement("tr");
-          trName.className = "bg-neutral-50/50";
+          trName.className = "border-b border-[#a2a9b1] bg-neutral-50/50";
+          
+          const tdLabelName = document.createElement("td");
+          tdLabelName.className = "p-1.5 text-left font-bold text-[#202122] text-xs border-r border-[#a2a9b1] bg-[#f8f9fa] w-[85px] min-w-[85px]";
+          tdLabelName.innerText = (state.electionType === "local" || state.electionType === "legislative") ? "대표" : "후보자";
+          trName.appendChild(tdLabelName);
+
           row.forEach(c => {
             const td = document.createElement("td");
-            td.className = "p-1.5 text-center align-top border-b border-neutral-200";
-            td.style.width = colWidth;
-            
-            let leaderTitle = "후보";
-            if (state.electionType === "local" || state.electionType === "legislative") {
-              leaderTitle = "대표";
-            }
-            td.innerHTML = `
-              <div class="text-[10px] text-neutral-400 font-bold">${leaderTitle}</div>
-              <div class="font-bold text-sm text-blue-700 hover:underline leading-tight">${parseWikipediaMarkup(c.name) || '성명 미상'}</div>
-              <div class="text-[11px] text-neutral-600 font-semibold mt-0.5">${parseWikipediaMarkup(c.party) || '무소속'}</div>
-            `;
+            td.className = "p-1.5 text-center align-top border-r border-[#a2a9b1] last:border-r-0 text-xs font-bold text-blue-700 hover:underline cursor-pointer";
+            td.innerHTML = parseWikipediaMarkup(c.name) || "-";
             trName.appendChild(td);
           });
+
+          for (let i = 0; i < emptyCount; i++) {
+            const td = document.createElement("td");
+            td.className = "border-r border-[#a2a9b1] last:border-r-0 bg-neutral-50/50";
+            trName.appendChild(td);
+          }
           tbody.appendChild(trName);
 
+          // 3. 소속 정당 행 (레이블: 정당)
+          const trParty = document.createElement("tr");
+          trParty.className = "border-b border-[#a2a9b1]";
+          
+          const tdLabelParty = document.createElement("td");
+          tdLabelParty.className = "p-1.5 text-left font-bold text-[#202122] text-xs border-r border-[#a2a9b1] bg-[#f8f9fa] w-[85px] min-w-[85px]";
+          tdLabelParty.innerText = "정당";
+          trParty.appendChild(tdLabelParty);
+
+          row.forEach(c => {
+            const td = document.createElement("td");
+            td.className = "p-1.5 text-center align-top border-r border-[#a2a9b1] last:border-r-0 text-xs text-blue-700 hover:underline cursor-pointer font-medium";
+            td.innerHTML = parseWikipediaMarkup(c.party) || "-";
+            trParty.appendChild(td);
+          });
+
+          for (let i = 0; i < emptyCount; i++) {
+            const td = document.createElement("td");
+            td.className = "border-r border-[#a2a9b1] last:border-r-0 bg-white";
+            trParty.appendChild(td);
+          }
+          tbody.appendChild(trParty);
+
+          // 4. 통합 가변 텍스트 상세 정보 리스트 실시간 자동 행 정렬 조립
           if (state.candidateFieldsConfig) {
             const textFields = state.candidateFieldsConfig.filter(f => f.type !== "image");
             textFields.forEach(field => {
               const trField = document.createElement("tr");
-              trField.className = "border-b border-neutral-100 text-xs";
+              trField.className = "border-b border-[#a2a9b1] last:border-b-0";
+
+              const tdLabelField = document.createElement("td");
+              tdLabelField.className = "p-1.5 text-left font-bold text-[#202122] text-xs border-r border-[#a2a9b1] bg-[#f8f9fa] w-[85px] min-w-[85px]";
+              tdLabelField.innerHTML = parseWikipediaMarkup(field.label);
+              trField.appendChild(tdLabelField);
+
               row.forEach(c => {
                 const td = document.createElement("td");
-                td.className = "p-1.5 text-center align-middle";
-                td.style.width = colWidth;
+                td.className = "p-1.5 text-center align-middle border-r border-[#a2a9b1] last:border-r-0 text-xs text-neutral-800";
                 const val = c.fieldValues ? c.fieldValues[field.id] : "";
                 
                 let styledVal = parseWikipediaMarkup(val) || '-';
                 if (field.id === "seatsWon" || field.id === "seats" || field.label.includes("획득 의석") || field.label.includes("Seats won")) {
                   styledVal = `<strong class="text-sm font-bold text-neutral-900">${parseWikipediaMarkup(val) || '0'}</strong>`;
                 }
-
-                td.innerHTML = `
-                  <span class="text-[9px] text-neutral-400 block font-bold">${parseWikipediaMarkup(field.label)}</span>
-                  <span class="text-neutral-800 leading-normal">${styledVal}</span>
-                `;
+                td.innerHTML = styledVal;
                 trField.appendChild(td);
               });
+
+              for (let i = 0; i < emptyCount; i++) {
+                const td = document.createElement("td");
+                td.className = "border-r border-[#a2a9b1] last:border-r-0 bg-white";
+                trField.appendChild(td);
+              }
               tbody.appendChild(trField);
             });
           }
 
+          table.appendChild(tbody);
+          candidatesContainer.appendChild(table);
         });
-
-        table.appendChild(tbody);
-        candidatesContainer.appendChild(table);
       }
     }
 
