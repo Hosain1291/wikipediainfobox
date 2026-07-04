@@ -767,7 +767,6 @@
         electionDate: "1995년 10월 30일",
         title: "독립 여부",
         previewWidth: 320,
-        candidatesPerRow: "auto",
         turnoutDetails: "퀘벡 주 헌법적 주권국 지위 부여 찬반 여부",
         registeredVoters: "5,087,009",
         turnoutText: "4,757,509\n'''93.52%''' ({{increase}} 14.1pp)",
@@ -830,7 +829,6 @@
         electionDate: "2026년 6월 3일",
         title: "지방 정부",
         previewWidth: 320,
-        candidatesPerRow: "auto",
         turnoutDetails: "'''16개 광역행정수장'''\n'''933명 광역의원'''\n'''227개 기초지자체장'''\n'''3,034명 기초의원'''",
         registeredVoters: "34,079,860",
         turnoutText: "27,253,457\n'''61.0%''' ({{increase}} 10.1pp)''^[1]''",
@@ -894,7 +892,6 @@
         electionDate: "2024년 4월 10일",
         title: "의회",
         previewWidth: 320,
-        candidatesPerRow: "auto",
         turnoutDetails: "'''국회의원 300석 전체'''\n원내 과반수 기준: '''151석'''",
         registeredVoters: "44,280,011",
         turnoutText: "지역구: '''66.97%''' ({{increase}} 0.77pp)\n비례대표: '''66.99%''' ({{increase}} 0.78pp)",
@@ -964,7 +961,6 @@
         electionDate: "2025년 6월 3일",
         title: "대통령",
         previewWidth: 320,
-        candidatesPerRow: "auto",
         turnoutDetails: "공표 모의 총조사 통계치 기준",
         registeredVoters: "44,391,871",
         turnoutText: "'''79.38%''' ({{increase}} 2.30 pp)",
@@ -1041,7 +1037,6 @@
       mapImage: "",
       mapCaption: "",
       previewWidth: 320,
-      candidatesPerRow: "auto", // 한 행에 배치할 후보의 수 (auto, 2, 3)
       title: "",
       beforeElection: "",
       beforeParty: "",
@@ -1060,8 +1055,8 @@
 
     // 초기 기동 함수
     window.onload = function() {
-      // 기본값으로 2025 가상 대선 프리셋 탑재
-      loadPresetData(PRESETS.ko_pres_2025_fictional);
+      // 기본값으로 1995년 퀘벡 국민투표 고증 데이터 탑재
+      loadPresetData(PRESETS.ko_referendum_quebec_1995);
       bindInputEvents();
     };
 
@@ -1143,12 +1138,6 @@
       }
     }
 
-    function changeCandidatesPerRow(val) {
-      state.candidatesPerRow = val;
-      updatePreview();
-      updateMarkup();
-    }
-
     function changePreviewWidth(val) {
       let width = parseInt(val);
       if (isNaN(width) || width < 260) width = 260;
@@ -1228,18 +1217,9 @@
         state.candidateFieldsConfig = [
           { id: "image", label: "프로필 이미지", type: "image" },
           { id: "votes", label: "득표수", type: "text" },
-          { id: "percentage", type: "text", label: "득표율" }
+          { id: "percentage", label: "득표율", type: "text" }
         ];
       }
-    }
-
-    function resetFieldsToDefault() {
-      autoConfigFieldsForType(state.electionType);
-      renderCandidateFieldsConfigForm();
-      renderCandidateFieldValuesForm();
-      updatePreview();
-      updateMarkup();
-      triggerToast("후보 정보 기입란 구성이 선거 기본 포맷으로 리셋되었습니다.");
     }
 
     function toggleElectionTypeUI() {
@@ -1256,7 +1236,7 @@
 
       if (state.electionType === "referendum") {
         if (headerTitle) headerTitle.innerText = "2. 투표 질문 & 결과 설정";
-        if (sectionTitle) sectionTitle.innerHTML = `<span class="w-2.5 h-2.5 bg-blue-600 rounded-full inline-block"></span> 국민투표 질문 및 결과 데이터 설정`;
+        if (sectionTitle) sectionTitle.innerHTML = `<span class="w-2.5 h-2.5 bg-indigo-600 rounded-full inline-block"></span> 국민투표 질문 및 결과 데이터 설정`;
         if (candBtn) candBtn.classList.add("hidden");
         if (candTabs) candTabs.classList.add("hidden");
         if (candEditor) candEditor.classList.add("hidden");
@@ -1400,7 +1380,6 @@
       state.mapImage = normalized.mapImage || "";
       state.mapCaption = normalized.mapCaption || "";
       state.previewWidth = normalized.previewWidth || 320;
-      state.candidatesPerRow = normalized.candidatesPerRow || "auto"; // 행 분할 속성 로드
       state.title = normalized.title;
       state.beforeElection = normalized.beforeElection || "";
       state.beforeParty = normalized.beforeParty || "";
@@ -1415,9 +1394,6 @@
 
       const typeInput = document.getElementById("input-electionType");
       if (typeInput) typeInput.value = state.electionType;
-
-      // 동적 분할 셀렉터 연계 바인딩
-      setElementValue("input-candidatesPerRow", state.candidatesPerRow);
 
       setElementValue("input-electionName", state.electionName);
       
@@ -1479,29 +1455,99 @@
       });
     }
 
+    // [가칭 image_a0d99d.png 완전 구현] 후보자 탭 옆에 수평 정렬 이동 화살표 (◀, ▶) 제공
     function renderCandidateTabs() {
       const container = document.getElementById("candidate-tabs-list");
       if (!container) return;
       container.innerHTML = "";
       
       state.candidates.forEach((c, idx) => {
-        const btn = document.createElement("button");
-        btn.id = `cand-tab-btn-${c.id}`;
-        btn.onclick = () => selectCandidate(c.id);
+        const wrapper = document.createElement("div");
+        const isActive = String(state.editingCandidateId) === String(c.id);
         
-        const activeClass = String(state.editingCandidateId) === String(c.id) 
-          ? 'bg-blue-600 text-white border-blue-600' 
-          : 'bg-neutral-100 text-neutral-600 border-neutral-200 hover:bg-neutral-200';
-        
-        btn.className = `text-xs px-3 py-2 rounded-md font-semibold flex items-center gap-1.5 whitespace-nowrap border transition ${activeClass}`;
+        // 탭 아웃라인 스타일링
+        wrapper.className = isActive
+          ? 'bg-blue-600 text-white border-blue-600 flex items-center rounded-md border shadow-sm transition'
+          : 'bg-neutral-100 text-neutral-600 border-neutral-200 hover:bg-neutral-200 flex items-center rounded-md border transition';
         
         const dispName = state.electionType === "next_legislative" ? c.party : (c.name || '미설정');
-        btn.innerHTML = `
-          <span id="tab-dot-${c.id}" class="w-2.5 h-2.5 rounded-full block border border-white/50" style="background-color: ${c.color}"></span>
-          <span id="tab-label-${c.id}">${dispName || '미설정'}</span>
+        
+        // 1. 클릭 타겟 버튼
+        const selectBtn = document.createElement("button");
+        selectBtn.className = "text-xs px-3 py-2 font-semibold flex items-center gap-1.5 whitespace-nowrap focus:outline-none";
+        selectBtn.onclick = () => selectCandidate(c.id);
+        selectBtn.innerHTML = `
+          <span class="w-2.5 h-2.5 rounded-full block border border-white/50" style="background-color: ${c.color}"></span>
+          <span>${dispName}</span>
         `;
-        container.appendChild(btn);
+        wrapper.appendChild(selectBtn);
+
+        // 2. 수평 이동 제어기 기어 연동 (◀ / ▶)
+        const controlDiv = document.createElement("div");
+        controlDiv.className = `flex items-center gap-0.5 pr-2.5 pl-1.5 border-l ${isActive ? 'border-white/20' : 'border-neutral-300'}`;
+        
+        // 왼쪽 이동
+        const leftBtn = document.createElement("button");
+        leftBtn.className = `text-[10px] px-1 py-0.5 rounded focus:outline-none transition ${isActive ? 'text-white hover:bg-white/20' : 'text-neutral-500 hover:bg-black/10'}`;
+        leftBtn.innerHTML = "◀";
+        if (idx === 0) {
+          leftBtn.disabled = true;
+          leftBtn.style.opacity = "0.3";
+          leftBtn.style.cursor = "not-allowed";
+        } else {
+          leftBtn.onclick = (e) => moveCandidateLeft(c.id, e);
+        }
+
+        // 오른쪽 이동
+        const rightBtn = document.createElement("button");
+        rightBtn.className = `text-[10px] px-1 py-0.5 rounded focus:outline-none transition ${isActive ? 'text-white hover:bg-white/20' : 'text-neutral-500 hover:bg-black/10'}`;
+        rightBtn.innerHTML = "▶";
+        if (idx === state.candidates.length - 1) {
+          rightBtn.disabled = true;
+          rightBtn.style.opacity = "0.3";
+          rightBtn.style.cursor = "not-allowed";
+        } else {
+          rightBtn.onclick = (e) => moveCandidateRight(c.id, e);
+        }
+
+        controlDiv.appendChild(leftBtn);
+        controlDiv.appendChild(rightBtn);
+        wrapper.appendChild(controlDiv);
+
+        container.appendChild(wrapper);
       });
+    }
+
+    // ◀ 버튼 좌측 인덱스 시프트 동작 함수
+    function moveCandidateLeft(id, event) {
+      if (event) event.stopPropagation(); // 상위 Wrapper 전이 차단
+      const idx = state.candidates.findIndex(c => String(c.id) === String(id));
+      if (idx > 0) {
+        const temp = state.candidates[idx];
+        state.candidates[idx] = state.candidates[idx - 1];
+        state.candidates[idx - 1] = temp;
+        
+        renderCandidateTabs();
+        updatePreview();
+        updateMarkup();
+        triggerToast("후보 순서가 왼쪽으로 1칸 이동하였습니다.");
+      }
+    }
+
+    // ▶ 버튼 우측 인덱스 시프트 동작 함수
+    function moveCandidateRight(id, event) {
+      if (event) event.stopPropagation(); // 상위 Wrapper 전이 차단
+      const idx = state.candidates.findIndex(c => String(c.id) === String(id));
+      if (idx !== -1 && idx < state.candidates.length - 1) {
+        const temp = state.candidates[idx];
+        state.candidates[idx] = state.candidates[idx + 1];
+        state.candidates[idx + 1] = temp;
+        
+        renderCandidateTabs();
+        updatePreview();
+        updateMarkup();
+        triggerToast("후보 순서가 오른쪽으로 1칸 이동하였습니다.");
+      }
     }
 
     function updateCandidateTabLabel(id, c) {
@@ -1774,7 +1820,7 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-[9px] text-neutral-400 font-bold">투표수 (Votes)</label>
-              <input type="text" value="${choice.votes}" oninput="updateReferendumChoiceData('${choice.id}', 'votes', this.value)" class="w-full p-1 border border-neutral-300 rounded text-xs bg-neutral-50 focus:bg-white focus:outline-none">
+              <input type="text" value="${choice.votes}" oninput="updateReferendumChoiceData('${choice.id}', 'votes', this.value)" class="w-full p-1 border border-neutral-300 rounded text-xs bg-neutral-50 focus:bg-white focus:outline-none" placeholder="투표수 미기입 시 공백">
             </div>
             <div>
               <label class="block text-[9px] text-neutral-400 font-bold">비율 (%)</label>
@@ -1873,8 +1919,13 @@
       event.target.value = "";
     }
 
+    function changeCandidatesPerRow(val) {
+      state.candidatesPerRow = val;
+      updatePreview();
+      updateMarkup();
+    }
+
     function updatePreview() {
-      // 메타 정보 수정
       const previewName = document.getElementById("preview-electionName");
       if (previewName) previewName.innerHTML = parseWikipediaMarkup(state.electionName) || "선거 정보 없음";
       
@@ -1959,10 +2010,9 @@
       if (mapSec) {
         if (state.mapImage) {
           mapSec.innerHTML = `
-            <div class="mx-auto max-w-full overflow-hidden flex items-center justify-center p-1 border border-[#e8ecef] bg-neutral-50">
+            <div class="mx-auto max-w-full overflow-hidden flex items-center justify-center p-1 border border-[#e8ecef] bg-[#f8f9fa]">
               <img id="preview-map-image" src="${state.mapImage}" alt="선거 지도" onerror="handleMapError(this)" class="max-h-[190px] w-auto object-contain">
             </div>
-            <!-- 지도 주석 가운데 정렬 및 글자색 검정색 변경 -->
             <p id="preview-map-caption" class="text-[11px] text-black text-center font-medium mt-1.5 leading-snug px-1">
               ${parseWikipediaMarkup(state.mapCaption) || ""}
             </p>
@@ -2053,20 +2103,21 @@
         candidatesContainer.innerHTML = tableHtml;
 
       } else {
+        // [중요 수정] 단독 후보(1당제) 선거일 때 자동으로 한 행에 1명만 독차지하도록 분기 설계
         let perRow = 3;
         if (state.candidatesPerRow === "2") {
           perRow = 2;
         } else if (state.candidatesPerRow === "3") {
           perRow = 3;
-        } else { // "auto"
+        } else { // "auto" 일 경우
           if (state.candidates.length === 1) {
-            perRow = 1;
+            perRow = 1; // 단독 후보(1당제)는 ◀1열 구조▶로 대칭 정렬
           } else if (state.candidates.length === 2) {
             perRow = 2;
           } else if (state.candidates.length === 3) {
             perRow = 3;
           } else {
-            perRow = 2;
+            perRow = 2; // 4명 이상은 가독성을 위해 2x2 분할 배치
           }
         }
 
@@ -2080,20 +2131,18 @@
           table.className = "w-full border-collapse border-b border-[#a2a9b1] last:border-b-0";
           table.style.tableLayout = "fixed";
 
-          // [대격변] 1인 정당(단독 후보) 및 일당제 선거용 정밀 colgroup 레이아웃 고증 탑재
           const colgroup = document.createElement("colgroup");
           const colLabel = document.createElement("col");
-          // 좌측 라벨 열 크기 설정
           colLabel.style.width = "95px";
           colgroup.appendChild(colLabel);
 
           row.forEach(() => {
             const colCand = document.createElement("col");
-            // 남은 영역을 한 행당 설정된 총 열 수(perRow)만큼 정확하게 분배
             colCand.style.width = `calc((100% - 95px) / ${perRow})`;
             colgroup.appendChild(colCand);
           });
 
+          // 빈 자리가 생기면 동조 폭 대칭 유지를 위해 투명 열 추가 패딩
           const emptyCount = perRow - row.length;
           for (let i = 0; i < emptyCount; i++) {
             const colEmpty = document.createElement("col");
@@ -2379,10 +2428,10 @@
       if (bKo && bEn) {
         if (lang === "ko") {
           bKo.className = "px-2.5 py-1 rounded transition bg-neutral-700 text-white shadow";
-          bEn.className = "px-2.5 py-1 rounded transition text-neutral-400";
+          bEn.className = "px-2.5 py-1 rounded transition text-neutral-400 font-bold";
         } else {
           bEn.className = "px-2.5 py-1 rounded transition bg-neutral-700 text-white shadow";
-          bKo.className = "px-2.5 py-1 rounded transition text-neutral-400";
+          bKo.className = "px-2.5 py-1 rounded transition text-neutral-400 font-bold";
         }
       }
       updateMarkup();
@@ -2420,6 +2469,7 @@
       triggerToast(`미리보기 서체가 전환되었습니다.`);
     }
 
+    // [핵심 인포박스 이미지 변환 모듈] 
     function downloadInfoboxAsImage() {
       const target = document.getElementById("wikipedia-preview-box");
       if (!target) return;
@@ -2429,7 +2479,7 @@
       html2canvas(target, {
         useCORS: true, 
         allowTaint: true,
-        backgroundColor: "#f8f9fa", 
+        backgroundColor: "#f8f9fa",
         scale: 2 
       }).then(canvas => {
         try {
