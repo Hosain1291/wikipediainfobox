@@ -327,7 +327,7 @@ details.fold .fold-body { padding: 0 14px 14px; display: flex; flex-direction: c
 .wp-portrait { width: min(100%, 120px); aspect-ratio: 4 / 5; max-height: 150px; margin: 0 auto; overflow: hidden; background: #eaecf0; }
 .wp-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .wp-colorbar td { height: 5px; padding: 0 2px !important; background-clip: content-box; }
-.wp-colorbar td:first-child { background: transparent !important; }
+.wp-colorbar td:first-child, .wp-colorbar td.blank { background: transparent !important; }
 
 /* data15 선거 전/후 */
 .wp-ba { width: 100%; border-collapse: collapse; background: transparent; }

@@ -337,13 +337,15 @@
     const nameLabel = s.electionType === "presidential" ? W().nominee : W().leader;
     let ordinal = 0, html = "";
     chunks().forEach((row, ri) => {
-      const cols = row.length;
-      const w = (100 / cols).toFixed(3);
-      const cellsFor = (fn) => row.map((c, i) => `<td style="width:${w}%">${fn(c, i)}</td>`).join("");
+      // 모든 줄이 첫 줄과 같은 칸 너비(k칸)를 쓰고, 모자란 칸은 비워 둠
+      const labW = isEn() ? 31 : 25;
+      const w = ((100 - labW) / k).toFixed(3);
+      const pad = (tag) => Array.from({ length: k - row.length }, () => `<${tag} style="width:${w}%"></${tag}>`).join("");
+      const cellsFor = (fn) => row.map((c, i) => `<td style="width:${w}%">${fn(c, i)}</td>`).join("") + pad("td");
       const rowsOut = [];
-      if (parl) rowsOut.push(`<tr class="wp-head">${row.map(() => `<th style="width:${w}%">${W().partyHead(++ordinal)}</th>`).join("")}</tr>`);
+      if (parl) rowsOut.push(`<tr class="wp-head">${row.map(() => `<th style="width:${w}%">${W().partyHead(++ordinal)}</th>`).join("")}${pad("th")}</tr>`);
       if (img) rowsOut.push(`<tr class="wp-imgrow">${cellsFor((c) => `<div class="wp-portrait">${portrait(c.fieldValues && c.fieldValues[img.id], c.name)}</div>`)}</tr>`);
-      rowsOut.push(`<tr class="wp-colorbar">${row.map((c) => `<td style="background:${hexOf(c.color)}"></td>`).join("")}</tr>`);
+      rowsOut.push(`<tr class="wp-colorbar">${row.map((c) => `<td style="background:${hexOf(c.color)}"></td>`).join("")}${Array.from({ length: k - row.length }, () => '<td class="blank"></td>').join("")}</tr>`);
       const lines = [];
       lines.push([nameLabel, (c) => `<a>${fmt(c.name)}</a>`]);
       lines.push([W().party, (c) => `<a>${fmt(c.party)}</a>`]);
@@ -353,7 +355,7 @@
         if (!row.some((c) => String(fn(c)).replace(/<[^>]*>/g, "").trim())) return; // 빈 행은 틀처럼 생략
         rowsOut.push(`<tr><th scope="row" class="wp-rowlabel">${lab}</th>${cellsFor(fn)}</tr>`);
       });
-      html += `${ri > 0 ? "<hr>" : ""}<table class="wp-cands"><colgroup><col class="wp-labcol" style="width:${isEn() ? 31 : 25}%">${row.map(() => "<col>").join("")}</colgroup><tbody>${rowsOut.map((r) => r.replace(/^<tr class="(wp-head|wp-imgrow|wp-colorbar)">/, '<tr class="$1"><td></td>')).join("")}</tbody></table>`;
+      html += `${ri > 0 ? "<hr>" : ""}<table class="wp-cands"><colgroup><col class="wp-labcol" style="width:${labW}%">${Array.from({ length: k }, () => `<col style="width:${w}%">`).join("")}</colgroup><tbody>${rowsOut.map((r) => r.replace(/^<tr class="(wp-head|wp-imgrow|wp-colorbar)">/, '<tr class="$1"><td></td>')).join("")}</tbody></table>`;
     });
     return `<tr><td colspan="2" class="infobox-full-data">${html || W().empty}</td></tr>`;
   }
