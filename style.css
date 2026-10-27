@@ -420,3 +420,4 @@ details.fold .fold-body { padding: 0 14px 14px; display: flex; flex-direction: c
 .ib-legis-elect-befaft td { vertical-align: top; padding: 0 0 .2em; text-align: left; }
 .ib-legis-elect-befaft .r { text-align: right; }
 .ib-legis-elect-befaft .half { width: 50%; }
+.wp-ib .wp-stat { text-align: center; padding: .05em .2em; }

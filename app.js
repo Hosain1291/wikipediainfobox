@@ -316,7 +316,8 @@
   const wpFlag = () => state.flagImage
     ? `<tr><td colspan="2" class="infobox-subheader"><img class="wp-flag50" src="${escAttr(state.flagImage)}" alt="" crossorigin="anonymous" onerror="window.__hideFail(this)"><hr></td></tr>`
     : "";
-  const wpLabel = (label, data) => `<tr><th scope="row" class="infobox-label">${label}</th><td class="infobox-data">${data}</td></tr>`;
+  // 선거인수·투표율 같은 행은 라벨과 값을 한 줄로 묶어 가운데 정렬
+  const wpLabel = (label, data) => `<tr><td colspan="2" class="infobox-full-data wp-stat"><b>${label}</b> ${data}</td></tr>`;
   function wpExtraStats() {
     return (state.customStats || []).filter((x) => x.label && x.label.trim()).map((x) => wpLabel(fmt(x.label), fmt(x.value))).join("");
   }
