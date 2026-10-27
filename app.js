@@ -49,7 +49,7 @@
     referendumQuestion: "", referendumChoices: [],
     editingCandidateId: "1", candidatesPerRow: "auto",
     outputLang: "ko", selectedFont: "wikipedia",
-    infoboxStyle: "wikipedia", namuThemeColor: "", namuBallotNo: true,
+    infoboxStyle: "wikipedia", namuThemeColor: "", namuBallotNo: true, ongoing: false,
     codeTab: "wiki-ko"
   };
 
@@ -172,14 +172,17 @@
   const isBoldField = (f) => /^(seatsWon|seats|percentage)$/.test(f.id) || /획득 의석|Seats won/.test(f.label);
   const percentField = () => textFields().find((f) => f.id === "percentage") || textFields().find((f) => /득표율/.test(f.label));
 
+  // Infobox election data15:
+  //   왼쪽  '''{title} before election'''  (ongoing=yes → '''Incumbent {title}''')
+  //   오른쪽 '''Elected {title}''' 또는 posttitle  (ongoing=yes → 비움, 결과 없으면 TBD)
   function baHeads() {
     const t = plain(state.title);
     if (state.electionType === "referendum" || !t) return ["이전", "이후"];
-    if (state.electionType === "presidential") return [`선거 전 ${t}`, `${t} 당선인`];
-    return [`선거 전 ${t}`, `선거 후 ${t}`];
+    if (state.ongoing) return [`현직 ${t}`, ""];
+    return [`선거 전 ${t}`, `선출된 ${t}`];
   }
-  const isIncumbent = () => !state.afterElection && !state.afterParty && state.electionType !== "referendum";
-  const incumbentHead = () => (plain(state.title) ? `현직 ${plain(state.title)}` : "현직");
+  const isIncumbent = () => !!state.ongoing && state.electionType !== "referendum";
+  const incumbentHead = () => baHeads()[0];
   const hasBA = () => !!(state.beforeElection || state.beforeParty || state.afterElection || state.afterParty);
   const partyColor = (name) => {
     const c = state.candidates.find((x) => plain(x.party) && plain(x.party) === plain(name));
@@ -206,75 +209,147 @@
     img.replaceWith(d.firstChild);
   };
   window.__hideFail = function (img) { const row = img.closest("tr"); if (row) row.remove(); };
+  window.__mapFail = function (img) {
+    const d = document.createElement("div");
+    d.className = "ph ph-map";
+    d.textContent = (window.__infobox && window.__infobox.state().outputLang === "en" && window.__infobox.state().infoboxStyle === "wikipedia") ? "Map image could not be loaded" : "지도 이미지를 불러오지 못했습니다";
+    img.replaceWith(d);
+  };
 
   /* =========================================================
-     위키백과 렌더러 — Infobox election / Infobox referendum
+     위키백과 렌더러 — Template:Infobox election / Template:Infobox referendum 소스 기준
+     (Module:Infobox 표 구조: title=caption, subheader, header, label/data, below)
      ========================================================= */
-  function wpNavRow() {
-    const s = state;
-    if (!s.beforeElectionYear && !s.electionDate && !s.afterElectionYear) return "";
-    return `<tr class="wp-nav">
-      <td class="l">${s.beforeElectionYear ? `← <a>${fmt(s.beforeElectionYear)}</a>` : ""}</td>
-      <td class="c">${fmt(s.electionDate)}</td>
-      <td class="r">${s.afterElectionYear ? `<a>${fmt(s.afterElectionYear)}</a> →` : ""}</td></tr>`;
+
+  // Infobox election 후보 칸 행 순서와 라벨 (매개변수 → 표시 이름)
+
+  /* ---------- 위키백과 미리보기 문구 (한국어 / 영어) ---------- */
+  const ORD_EN = ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth"];
+  const WP_TXT = {
+    ko: {
+      registered: "선거인수", turnout: "투표율", nominee: "후보", leader: "대표", party: "정당",
+      partyHead: (n) => `제${n}당`, majority: ["다수당", "소수당"],
+      before: (t) => `선거 전 ${t}`, elected: (t) => `선출된 ${t}`, incumbent: (t) => `현직 ${t}`, tbd: "미정",
+      results: "결과", choice: "선택", votes: "득표수", resultsBy: "지역별 결과",
+      electorate: "선거인수", empty: "후보를 추가하세요", untitled: "선거 명칭",
+      rows: { alliance: "연합", leader_since: "대표 취임", leaders_seat: "대표 지역구", home_state: "출신 주", running_mate: "러닝메이트",
+        last_election: "이전 선거", seats_before: "선거 전 의석", seats_needed: "과반 필요 의석", seats: "획득 의석", seats_after: "선거 후 의석",
+        seat_change: "의석 변화", electoral_vote: "선거인단", states_carried: "승리 주", delegate_count: "대의원", popular_vote: "득표수",
+        percentage: "득표율", swing: "변동" },
+      nlParty: "정당", nlLeader: "대표", nlSeats: "현재 의석"
+    },
+    en: {
+      registered: "Registered", turnout: "Turnout", nominee: "Nominee", leader: "Leader", party: "Party",
+      partyHead: (n) => `${ORD_EN[n - 1] || n + "th"} party`, majority: ["Majority party", "Minority party"],
+      before: (t) => `${t} before election`, elected: (t) => `Elected ${t}`, incumbent: (t) => `Incumbent ${t}`, tbd: "TBD",
+      results: "Results", choice: "Choice", votes: "Votes", resultsBy: "Results by county",
+      electorate: "Registered voters", empty: "Add a candidate", untitled: "Election",
+      rows: { alliance: "Alliance", leader_since: "Leader since", leaders_seat: "Leader's seat", home_state: "Home state", running_mate: "Running mate",
+        last_election: "Last election", seats_before: "Seats before", seats_needed: "Seats needed", seats: "Seats won", seats_after: "Seats after",
+        seat_change: "Seat change", electoral_vote: "Electoral vote", states_carried: "States carried", delegate_count: "Delegate count",
+        popular_vote: "Popular vote", percentage: "Percentage", swing: "Swing" },
+      nlParty: "Party", nlLeader: "Leader", nlSeats: "Current seats"
+    }
+  };
+  const W = () => WP_TXT[state.outputLang === "en" ? "en" : "ko"];
+  function wpHeads() {
+    const t = plain(state.title), w = W();
+    if (state.ongoing) return [w.incumbent(t), ""];
+    return [w.before(t), w.elected(t)];
   }
-  const wpHr = () => `<tr class="wp-hr"><td colspan="3"><div></div></td></tr>`;
-  function wpStats(centered) {
-    const s = state, rows = [];
-    if (s.registeredVoters) rows.push(["선거인수", fmt(s.registeredVoters)]);
-    if (s.turnoutText) rows.push(["투표율", fmt(s.turnoutText)]);
-    (s.customStats || []).forEach((x) => { if (x.label && x.label.trim()) rows.push([fmt(x.label), fmt(x.value)]); });
-    if (!rows.length) return "";
-    return `<tr><td colspan="3"><table class="wp-kv${centered ? " centered" : ""}">${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table></td></tr>`;
+  const WP_ROWS = [
+    ["alliance", "연합"], ["leader_since", "대표 취임"], ["leaders_seat", "대표 지역구"],
+    ["home_state", "출신 주"], ["running_mate", "러닝메이트"],
+    ["last_election", "이전 선거"], ["seats_before", "선거 전 의석"], ["seats_needed", "과반 필요 의석"],
+    ["seats", "획득 의석"], ["seats_after", "선거 후 의석"], ["seat_change", "의석 변화"],
+    ["electoral_vote", "선거인단"], ["states_carried", "승리 주"], ["delegate_count", "대의원"],
+    ["popular_vote", "득표수"], ["percentage", "득표율"], ["swing", "변동"]
+  ];
+  const FIELD_PARAM = {
+    votes: "popular_vote", popularVote: "popular_vote", percentage: "percentage",
+    seatsWon: "seats", seats: "seats", seatChange: "seat_change", lastElection: "last_election",
+    alliance: "alliance", swing: "swing", seatsBefore: "seats_before", seatsAfter: "seats_after",
+    seatsNeeded: "seats_needed", runningMate: "running_mate", homeState: "home_state",
+    electoralVote: "electoral_vote", statesCarried: "states_carried", delegateCount: "delegate_count",
+    leaderSince: "leader_since", leadersSeat: "leaders_seat"
+  };
+  // 입력 항목을 틀 매개변수(이름 있는 행)와 1blank~6blank 보조 행으로 나눔
+  function wpFieldPlan() {
+    const named = {}, blanks = [];
+    textFields().forEach((f) => {
+      const p = FIELD_PARAM[f.id];
+      if (p && !named[p]) named[p] = f; else blanks.push(f);
+    });
+    return { named, blanks: blanks.slice(0, 6), dropped: blanks.slice(6) };
   }
-  function wpMap(legend) {
+  const wpType = () => (state.electionType === "presidential" ? "presidential" : "parliamentary");
+  const wpHr = () => `<tr><td colspan="2" class="wp-hrcell"><hr></td></tr>`;
+
+  // {{succession links}}: 왼쪽 20% / 가운데 60% / 오른쪽 20%
+  function wpSuccession(prev, center, next) {
+    if (!prev && !center && !next) return "";
+    return `<tr><td colspan="2" class="infobox-subheader"><table class="wp-succ"><tr>
+      <td style="width:20%" class="l">${prev ? `← <a>${fmt(prev)}</a>` : ""}</td>
+      <td style="width:60%" class="c">${center ? `<b>${fmt(center)}</b>` : ""}</td>
+      <td style="width:20%" class="r">${next ? `<a>${fmt(next)}</a> →` : ""}</td></tr></table></td></tr>`;
+  }
+  const wpFlag = () => state.flagImage
+    ? `<tr><td colspan="2" class="infobox-subheader"><img class="wp-flag50" src="${escAttr(state.flagImage)}" alt="" crossorigin="anonymous" onerror="window.__hideFail(this)"><hr></td></tr>`
+    : "";
+  const wpLabel = (label, data) => `<tr><th scope="row" class="infobox-label">${label}</th><td class="infobox-data">${data}</td></tr>`;
+  function wpExtraStats() {
+    return (state.customStats || []).filter((x) => x.label && x.label.trim()).map((x) => wpLabel(fmt(x.label), fmt(x.value))).join("");
+  }
+  function wpMapBlock(defaultCaption) {
     const s = state;
     if (!s.mapImage) return "";
-    return `<tr><td colspan="3" class="wp-map">
-      <img src="${escAttr(s.mapImage)}" alt="선거 결과 지도" crossorigin="anonymous" onerror="window.__imgFail(this)">
-      ${s.mapCaption ? `<div class="wp-caption">${fmt(s.mapCaption)}</div>` : ""}${legend || ""}</td></tr>`;
-  }
-  function wpBA() {
-    if (!hasBA()) return "";
-    const s = state, [hb, ha] = baHeads();
-    const chip = (p) => { const c = partyColor(p); return c ? `<span class="chip" style="background:${hexOf(c)}"></span>` : ""; };
-    if (isIncumbent()) {
-      return wpHr() + `<tr><td colspan="3"><table class="wp-ba"><tr><td class="b"><div class="h">${escHtml(incumbentHead())}</div><a>${fmt(s.beforeElection) || "—"}</a><br>${chip(s.beforeParty)}<a>${fmt(s.beforeParty)}</a></td></tr></table></td></tr>`;
-    }
-    return wpHr() + `<tr><td colspan="3"><table class="wp-ba"><tr>
-      <td class="b"><div class="h">${escHtml(hb)}</div><a>${fmt(s.beforeElection) || "—"}</a><br>${chip(s.beforeParty)}<a>${fmt(s.beforeParty)}</a></td>
-      <td class="arr">→</td>
-      <td class="a"><div class="h">${escHtml(ha)}</div><a>${fmt(s.afterElection) || "—"}</a><br><a>${fmt(s.afterParty)}</a>${chip(s.afterParty)}</td>
-    </tr></table></td></tr>`;
+    const cap = s.mapCaption ? fmt(s.mapCaption) : (defaultCaption || "");
+    return wpHr() + `<tr><td colspan="2" class="infobox-full-data">
+      <img class="wp-map300" src="${escAttr(s.mapImage)}" alt="" crossorigin="anonymous" onerror="window.__mapFail(this)">
+      ${cap ? `<div>${cap}</div>` : ""}</td></tr>`;
   }
 
-  function wpCandidates() {
-    const s = state, k = perRow(), img = imageField(), tfs = textFields();
-    const labW = 26, colW = (100 - labW) / k;
-    const isLeg = s.electionType === "legislative" || s.electionType === "local";
+  // data10: Module:Infobox election row — 한 줄 최대 3칸, 줄 사이 <hr />
+  function wpCandidateRows() {
+    const s = state, k = Math.min(3, perRow()), img = imageField();
+    const { named, blanks } = wpFieldPlan();
+    const parl = wpType() === "parliamentary";
+    const nameLabel = s.electionType === "presidential" ? W().nominee : W().leader;
     let ordinal = 0, html = "";
-    chunks().forEach((row) => {
-      const empty = k - row.length;
-      const pad = (cls) => Array.from({ length: empty }, () => `<td class="${cls || ""}"></td>`).join("");
-      html += `<table class="wp-cands"><colgroup><col style="width:${labW}%">${Array.from({ length: k }, () => `<col style="width:${colW}%">`).join("")}</colgroup><tbody>`;
-      if (isLeg) {
-        html += `<tr><th></th>${row.map(() => `<td><b>제${++ordinal}당</b></td>`).join("")}${pad()}</tr>`;
-      }
-      if (img) {
-        html += `<tr class="img"><th></th>${row.map((c) => `<td><div class="wp-portrait">${portrait(c.fieldValues && c.fieldValues[img.id], c.name)}</div></td>`).join("")}${pad()}</tr>`;
-      }
-      html += `<tr class="wp-colorbar"><th></th>${row.map((c) => `<td style="background:${hexOf(c.color)}"></td>`).join("")}${pad("blank")}</tr>`;
-      html += `<tr><th>${leaderLabel()}</th>${row.map((c) => `<td><a>${fmt(c.name) || "—"}</a></td>`).join("")}${pad()}</tr>`;
-      html += `<tr><th>정당</th>${row.map((c) => `<td><a>${fmt(c.party) || "—"}</a></td>`).join("")}${pad()}</tr>`;
-      tfs.forEach((f) => {
-        html += `<tr><th>${fmt(f.label)}</th>${row.map((c) => {
-          const v = fmt(c.fieldValues && c.fieldValues[f.id]);
-          return `<td>${v ? (isBoldField(f) ? `<b>${v}</b>` : v) : "—"}</td>`;
-        }).join("")}${pad()}</tr>`;
+    chunks().forEach((row, ri) => {
+      const cols = row.length;
+      const w = (100 / cols).toFixed(3);
+      const cellsFor = (fn) => row.map((c, i) => `<td style="width:${w}%">${fn(c, i)}</td>`).join("");
+      const rowsOut = [];
+      if (parl) rowsOut.push(`<tr class="wp-head">${row.map(() => `<th style="width:${w}%">${W().partyHead(++ordinal)}</th>`).join("")}</tr>`);
+      if (img) rowsOut.push(`<tr class="wp-imgrow">${cellsFor((c) => `<div class="wp-portrait">${portrait(c.fieldValues && c.fieldValues[img.id], c.name)}</div>`)}</tr>`);
+      rowsOut.push(`<tr class="wp-colorbar">${row.map((c) => `<td style="background:${hexOf(c.color)}"></td>`).join("")}</tr>`);
+      const lines = [];
+      lines.push([nameLabel, (c) => `<a>${fmt(c.name)}</a>`]);
+      lines.push([W().party, (c) => `<a>${fmt(c.party)}</a>`]);
+      WP_ROWS.forEach(([p]) => { if (named[p]) lines.push([W().rows[p], (c) => fmt(c.fieldValues && c.fieldValues[named[p].id])]); });
+      blanks.forEach((f) => lines.push([fmt(f.label), (c) => fmt(c.fieldValues && c.fieldValues[f.id])]));
+      lines.forEach(([lab, fn]) => {
+        if (!row.some((c) => String(fn(c)).replace(/<[^>]*>/g, "").trim())) return; // 빈 행은 틀처럼 생략
+        rowsOut.push(`<tr><th scope="row" class="wp-rowlabel">${lab}</th>${cellsFor(fn)}</tr>`);
       });
-      html += `</tbody></table>`;
+      html += `${ri > 0 ? "<hr>" : ""}<table class="wp-cands"><colgroup><col class="wp-labcol">${row.map(() => "<col>").join("")}</colgroup><tbody>${rowsOut.map((r) => r.replace(/^<tr class="(wp-head|wp-imgrow|wp-colorbar)">/, '<tr class="$1"><td></td>')).join("")}</tbody></table>`;
     });
-    return `<tr><td colspan="3">${html || '<div class="wp-note">후보를 추가하세요</div>'}</td></tr>`;
+    return `<tr><td colspan="2" class="infobox-full-data">${html || W().empty}</td></tr>`;
+  }
+
+  function wpBeforeAfter() {
+    const s = state;
+    if (!plain(s.title)) return ""; // {{#if:{{{title|}}}| … }}
+    const [hb, ha] = wpHeads();
+    const left = (s.beforeElection || s.beforeParty)
+      ? `<b>${escHtml(hb)}</b><br>${fmt(s.beforeElection)}<br>${s.beforeParty ? `<a>${fmt(s.beforeParty)}</a>` : ""}` : "";
+    let right = "";
+    if (!s.ongoing) {
+      right = `<b>${escHtml(ha)}</b><br>${fmt(s.afterElection) || (s.afterParty ? "" : W().tbd)}<br>${s.afterParty ? `<a>${fmt(s.afterParty)}</a>` : ""}`;
+    }
+    return wpHr() + `<tr><td colspan="2" class="infobox-full-data"><table class="wp-ba" role="presentation"><tr>
+      <td style="width:50%;text-align:left">${left}</td><td style="width:50%;text-align:right">${right}</td></tr></table></td></tr>`;
   }
 
   function wpNextLeg() {
@@ -282,55 +357,78 @@
       <td class="sw" style="background:${hexOf(c.color)}"></td>
       <td><a>${fmt(c.party) || "—"}</a></td><td>${fmt(c.name) || "—"}</td>
       <td class="num">${fmt(c.fieldValues && c.fieldValues.seatsWon) || "0"}</td></tr>`).join("");
-    return `<tr><td colspan="3"><table class="wp-table"><thead><tr><th colspan="2">정당</th><th>대표</th><th>현재 의석</th></tr></thead><tbody>${rows}</tbody></table></td></tr>`;
+    return `<tr><td colspan="2" class="infobox-full-data"><table class="wp-table"><thead><tr><th colspan="2">${W().nlParty}</th><th>${W().nlLeader}</th><th>${W().nlSeats}</th></tr></thead><tbody>${rows}</tbody></table></td></tr>`;
+  }
+
+  function renderElection() {
+    const s = state;
+    let b = "";
+    b += wpFlag();
+    b += wpSuccession(s.beforeElectionYear, s.electionDate, s.afterElectionYear);
+    // header1: <hr />{{{seats_for_election}}} / {{{votes_for_election}}}
+    if (s.turnoutDetails) b += `<tr><th colspan="2" class="infobox-header"><hr>${fmt(s.turnoutDetails)}</th></tr>`;
+    if (s.registeredVoters) b += wpLabel(W().registered, fmt(s.registeredVoters));
+    if (s.turnoutText) b += wpLabel(W().turnout, fmt(s.turnoutText));
+    b += wpExtraStats();
+    b += s.electionType === "next_legislative" ? wpNextLeg() : wpCandidateRows();
+    b += wpMapBlock();
+    b += wpBeforeAfter();
+    return b;
+  }
+
+  // Infobox referendum/results 자리: 찬반 표
+  function wpRefResults() {
+    const s = state;
+    const { list, opts, winner } = choiceRows();
+    const hasVotes = list.some((c) => String(c.votes || "").trim());
+    const span = hasVotes ? 2 : 1;
+    let t = `<table class="wp-results"><thead><tr><th>${W().choice}</th>${hasVotes ? `<th>${W().votes}</th>` : ""}<th>%</th></tr></thead><tbody>`;
+    list.forEach((c) => {
+      const tot = isTotalChoice(c.label);
+      let mark = "";
+      if (!tot && winner) mark = c === winner ? '<span class="mark yes">✓</span>' : '<span class="mark no">✗</span>';
+      const cls = tot ? (/총|Total/i.test(c.label) ? "total" : "sub") : (c === winner ? "win" : "");
+      t += `<tr class="${cls}"><td>${mark}${fmt(c.label)}</td>${hasVotes ? `<td class="num">${fmt(c.votes)}</td>` : ""}<td class="num">${fmt(c.percentage)}</td></tr>`;
+    });
+    if (s.turnoutText) t += `<tr class="sub"><td>${W().turnout}</td><td class="num" colspan="${span}">${fmt(s.turnoutText)}</td></tr>`;
+    if (s.registeredVoters) t += `<tr class="sub"><td>${W().electorate}</td><td class="num" colspan="${span}">${fmt(s.registeredVoters)}</td></tr>`;
+    return t + "</tbody></table>";
+  }
+  // {{bar box}} + {{bar percent}} — 기본 색 #47729E, #8B8B54, red, orange, teal
+  const REF_BAR_DEFAULTS = ["#47729e", "#8b8b54", "red", "orange", "teal"];
+  function wpRefBars(opts) {
+    return `<div class="wp-barbox">${opts.slice(0, 5).map((c, i) => {
+      const p = pctOf(c.percentage), col = c.color ? hexOf(c.color) : REF_BAR_DEFAULTS[i];
+      return `<div class="wp-barrow"><div>${fmt(c.label)}</div><div class="wp-bar"><span style="width:${isNaN(p) ? 0 : Math.min(100, p)}%;background:${col}"></span></div><span class="wp-barpct">${isNaN(p) ? "" : p.toFixed(2) + "%"}</span></div>`;
+    }).join("")}</div>`;
+  }
+
+  function renderReferendum() {
+    const s = state;
+    const { list, opts } = choiceRows();
+    let b = "";
+    b += wpFlag();
+    b += wpSuccession(s.beforeElectionYear, s.electionDate, s.afterElectionYear);
+    // subheader3: {{box|title/question}} 테두리 2px #A2A9B1, 배경 #f8f9fa
+    if (s.referendumQuestion) b += `<tr><td colspan="2" class="infobox-subheader"><div class="wp-qbox">${fmt(s.referendumQuestion)}</div></td></tr>`;
+    b += wpExtraStats(); // voting_system / outcome 자리
+    if (list.length) {
+      b += `<tr><th colspan="2" class="infobox-header wp-refhead">${W().results}</th></tr>`;
+      b += opts.length > 2
+        ? `<tr><td colspan="2" class="infobox-full-data">${wpRefBars(opts)}</td></tr>`
+        : `<tr><td colspan="2" class="infobox-full-data">${wpRefResults()}</td></tr>`;
+    }
+    // map: 캡션이 없으면 "Results by {mapdivision|county}"
+    b += wpMapBlock(W().resultsBy);
+    if (s.turnoutDetails) b += `<tr><td colspan="2" class="infobox-below wp-refbelow">${fmt(s.turnoutDetails)}</td></tr>`;
+    return b;
   }
 
   function renderWikipedia() {
-    const s = state, W = s.previewWidth;
-    let b = `<tr><th colspan="3" class="wp-above">${fmt(s.electionName) || "선거 명칭"}</th></tr>`;
-
-    if (s.electionType === "referendum") {
-      // Infobox referendum: 명칭 → 투표 질문 → 결과 머리 → 표 → 지도 → 비고
-      if (s.flagImage) b += `<tr><td colspan="3" class="wp-center wp-flag"><img src="${escAttr(s.flagImage)}" alt="" crossorigin="anonymous" onerror="window.__hideFail(this)"></td></tr>`;
-      if (s.referendumQuestion) b += `<tr><td colspan="3" class="wp-center">${fmt(s.referendumQuestion)}</td></tr>`;
-      b += `<tr><td colspan="3" class="wp-header">투표 결과</td></tr>`;
-      const { list, opts, winner } = choiceRows();
-      const hasVotes = list.some((c) => String(c.votes || "").trim());
-      let t = `<table class="wp-results"><thead><tr><th>찬반</th>${hasVotes ? "<th>득표수</th>" : ""}<th>비율</th></tr></thead><tbody>`;
-      list.forEach((c) => {
-        const tot = isTotalChoice(c.label);
-        let mark = "";
-        if (!tot && opts.length >= 2 && winner) mark = c === winner ? '<span class="mark yes">✓</span>' : '<span class="mark no">✗</span>';
-        const cls = tot ? (/총|Total/i.test(c.label) ? "total" : "") : (c === winner ? "win" : "");
-        t += `<tr class="${cls}"><td>${mark}${fmt(c.label) || "—"}</td>${hasVotes ? `<td class="num">${fmt(c.votes)}</td>` : ""}<td class="num">${fmt(c.percentage)}</td></tr>`;
-      });
-      if (s.turnoutText) t += `<tr><td>투표율</td><td class="num" colspan="${hasVotes ? 2 : 1}">${fmt(s.turnoutText)}</td></tr>`;
-      if (s.registeredVoters) t += `<tr><td>선거인수</td><td class="num" colspan="${hasVotes ? 2 : 1}">${fmt(s.registeredVoters)}</td></tr>`;
-      if (!list.length) t += `<tr><td colspan="3" class="wp-center">결과가 아직 없습니다</td></tr>`;
-      t += `</tbody></table>`;
-      b += `<tr><td colspan="3">${t}</td></tr>`;
-      const legend = opts.length >= 2
-        ? `<div class="vbar-legend">${opts.slice(0, 4).map((c, i) => `<span><span class="chip" style="display:inline-block;width:.8em;height:.8em;margin-right:.3em;background:${hexOf(c.color || CHOICE_COLORS[i])}"></span>${escHtml(plain(c.label))}</span>`).join("")}</div>`
-        : "";
-      b += wpMap(legend);
-      const notes = [];
-      if (s.electionDate) notes.push(`<b>투표일</b> ${fmt(s.electionDate)}`);
-      if (s.turnoutDetails) notes.push(fmt(s.turnoutDetails));
-      (s.customStats || []).forEach((x) => { if (x.label && x.label.trim()) notes.push(`<b>${fmt(x.label)}</b> ${fmt(x.value)}`); });
-      if (notes.length) b += `<tr><td colspan="3" class="wp-note">${notes.join("<br>")}</td></tr>`;
-      b += wpBA();
-    } else {
-      // Infobox election: 명칭 → 국기 → ← 이전 | 선거일 | 다음 → → 개요 → 통계 → 후보 → 지도 → 선거 전/후
-      if (s.flagImage) b += `<tr><td colspan="3" class="wp-center wp-flag"><img src="${escAttr(s.flagImage)}" alt="" crossorigin="anonymous" onerror="window.__hideFail(this)"></td></tr>`;
-      b += wpNavRow();
-      if (s.turnoutDetails) b += `<tr><td colspan="3" class="wp-note">${fmt(s.turnoutDetails)}</td></tr>`;
-      b += wpStats(true);
-      b += wpHr();
-      b += s.electionType === "next_legislative" ? wpNextLeg() : wpCandidates();
-      if (s.mapImage) b += wpHr() + wpMap();
-      b += wpBA();
-    }
-    return `<table class="wp-ib" style="width:${W}px"><tbody>${b}</tbody></table>`;
+    const s = state, ref = s.electionType === "referendum";
+    const body = ref ? renderReferendum() : renderElection();
+    return `<table class="infobox wp-ib ${ref ? "ib-referendum" : "ib-election"}" style="width:${s.previewWidth}px">
+      <caption class="infobox-title">${fmt(s.electionName) || W().untitled}</caption><tbody>${body}</tbody></table>`;
   }
 
   /* =========================================================
@@ -469,7 +567,7 @@
 
     if (s.mapImage) {
       rows.push([cell(
-        `<div class="nm-map"><img src="${escAttr(s.mapImage)}" alt="선거 결과 지도" crossorigin="anonymous" onerror="window.__imgFail(this)"></div>${s.mapCaption ? `<div class="nm-cap">${fmt(s.mapCaption)}</div>` : ""}`,
+        `<div class="nm-map"><img src="${escAttr(s.mapImage)}" alt="선거 결과 지도" crossorigin="anonymous" onerror="window.__mapFail(this)"></div>${s.mapCaption ? `<div class="nm-cap">${fmt(s.mapCaption)}</div>` : ""}`,
         `[[파일:${fileNameOf(s.mapImage, "선거 결과 지도.png")}|width=100%]]${s.mapCaption ? `[br]{{{-1 ${toNamu(s.mapCaption)}}}}` : ""}`,
         { span: N })]);
     }
@@ -523,87 +621,69 @@
   }
 
   /* =========================================================
-     위키텍스트 — Infobox election / Infobox referendum
+     위키텍스트 — Template:Infobox election / Template:Infobox referendum 매개변수
      ========================================================= */
-  const FIELD_PARAM = {
-    votes: "popular_vote", percentage: "percentage", seatsWon: "seats", seats: "seats",
-    seatChange: "seat_change", lastElection: "last_election", alliance: "alliance",
-    swing: "swing", seatsBefore: "seats_before", runningMate: "running_mate", homeState: "home_state",
-    electoralVote: "electoral_vote"
-  };
   function paramBlock(pairs) {
     const w = Math.min(22, Math.max(...pairs.map(([k]) => (k ? k.length : 0)), 0));
     return pairs.map(([k, v]) => (k === null ? v : `| ${k.padEnd(w)} = ${v == null ? "" : v}`)).join("\n");
   }
-  // 템플릿은 한 줄에 3명이므로, 2명씩 배치하면 1·2 / 4·5 / 7·8 칸을 씀
+  // 틀의 row 1 = 1~3번, row 2 = 4~6번, row 3 = 7~9번. 한 줄에 2명이면 1·2 / 4·5 / 7·8
   function templateSlots() {
-    const k = perRow();
-    return state.candidates.map((c, i) => {
-      if (k >= 3) return i + 1;
-      const r = Math.floor(i / k), col = i % k;
-      return r * 3 + col + 1;
-    });
+    const k = Math.min(3, perRow());
+    return state.candidates.map((c, i) => Math.floor(i / k) * 3 + (i % k) + 1);
   }
 
   function wikiElection(lang) {
     const s = state, P = [];
     const add = (k, v) => P.push([k, v]);
     const com = (t) => P.push([null, `<!-- ${t} -->`]);
-    const type = { presidential: "presidential", legislative: "legislative", local: "parliamentary" }[s.electionType] || "parliamentary";
+    const type = wpType();
     add("election_name", toWiki(s.electionName));
     add("country", s.country || "");
-    add("type", type);
-    add("ongoing", "no");
-    if (s.beforeElectionYear) { add("previous_election", sisterTitle(plain(s.beforeElectionYear))); add("previous_year", plain(s.beforeElectionYear)); }
-    if (s.afterElectionYear) { add("next_election", sisterTitle(plain(s.afterElectionYear))); add("next_year", plain(s.afterElectionYear)); }
-    add("election_date", toWiki(s.electionDate));
     if (s.flagImage) add("flag_image", fileNameOf(s.flagImage, "Flag.svg"));
+    add("type", type);
+    add("ongoing", s.ongoing ? "yes" : "no");
+    if (s.beforeElectionYear) { add("previous_election", sisterTitle(plain(s.beforeElectionYear))); add("previous_year", plain(s.beforeElectionYear)); }
+    add("election_date", toWiki(s.electionDate));
+    if (s.afterElectionYear) { add("next_election", sisterTitle(plain(s.afterElectionYear))); add("next_year", plain(s.afterElectionYear)); }
     if (s.turnoutDetails) add(type === "presidential" ? "votes_for_election" : "seats_for_election", toWiki(s.turnoutDetails));
     if (s.registeredVoters) add("registered", toWiki(s.registeredVoters));
     if (s.turnoutText) add("turnout", toWiki(s.turnoutText));
-    (s.customStats || []).forEach((x) => { if (x.label && x.label.trim()) com(`추가 항목 · ${plain(x.label)}: ${plain(x.value)} (틀에 대응 매개변수 없음)`); });
+    (s.customStats || []).forEach((x) => { if (x.label && x.label.trim()) com(`${plain(x.label)}: ${plain(x.value)} — 틀에 해당 매개변수가 없어 주석으로 남김`); });
 
     const img = imageField();
-    const tfs = textFields();
-    const used = new Set();
-    const blanks = [];
-    tfs.forEach((f) => {
-      const p = FIELD_PARAM[f.id];
-      if (p && !used.has(p)) { used.add(p); f.__param = p; }
-      else { f.__param = null; blanks.push(f); }
-    });
+    const { named, blanks, dropped } = wpFieldPlan();
     if (blanks.length) {
       P.push([null, ""]);
-      com("보조 행 (1blank~6blank)");
-      blanks.slice(0, 6).forEach((f, i) => { f.__blank = i + 1; add(`${i + 1}blank`, toWiki(f.label)); });
-      if (blanks.length > 6) com(`틀은 보조 행을 6개까지만 지원합니다: ${blanks.slice(6).map((f) => plain(f.label)).join(", ")} 생략`);
+      blanks.forEach((f, i) => add(`${i + 1}blank`, toWiki(f.label)));
+      if (dropped.length) com(`보조 행은 6개까지라 생략: ${dropped.map((f) => plain(f.label)).join(", ")}`);
     }
     const slots = templateSlots();
+    const nameParam = s.electionType === "presidential" ? "nominee" : "leader";
     s.candidates.forEach((c, i) => {
       const n = slots[i];
-      if (n > 9) { if (n === slots.find((x) => x > 9)) com("틀은 후보를 9명까지만 지원합니다"); return; }
+      if (n > 9) { if (n === slots.find((x) => x > 9)) com("틀은 9칸까지만 지원하므로 나머지는 생략"); return; }
       P.push([null, ""]);
-      com(`${i + 1}번째 ${s.electionType === "presidential" ? "후보" : "정당"}`);
       const fv = c.fieldValues || {};
       if (img) add(`image${n}`, fileNameOf(fv[img.id], `Candidate_${n}.png`));
-      add(`${s.electionType === "presidential" ? "nominee" : "leader"}${n}`, toWiki(c.name));
-      add(`party${n}`, toWiki(c.party));
       add(`colour${n}`, hexOf(c.color).replace("#", ""));
-      tfs.forEach((f) => {
-        const v = toWiki(fv[f.id] || "");
-        if (f.__param) add(`${f.__param}${n}`, v);
-        else if (f.__blank) add(`${f.__blank}data${n}`, v);
-      });
+      add(`${nameParam}${n}`, toWiki(c.name));
+      add(`party${n}`, toWiki(c.party));
+      WP_ROWS.forEach(([p]) => { if (named[p]) add(`${p}${n}`, toWiki(fv[named[p].id] || "")); });
+      blanks.forEach((f, bi) => add(`${bi + 1}data${n}`, toWiki(fv[f.id] || "")));
     });
     P.push([null, ""]);
-    if (s.mapImage) { add("map_image", fileNameOf(s.mapImage, "Election_map.png")); add("map_caption", toWiki(s.mapCaption)); }
-    if (s.title) add("title", toWiki(s.title));
+    if (s.mapImage) {
+      add("map_image", fileNameOf(s.mapImage, "Election_map.png"));
+      add("map_size", "300px");
+      add("map_caption", toWiki(s.mapCaption));
+    }
+    add("title", toWiki(s.title));
     add("before_election", toWiki(s.beforeElection));
     add("before_party", toWiki(s.beforeParty));
     add("after_election", toWiki(s.afterElection));
     add("after_party", toWiki(s.afterParty));
-    const name = lang === "ko" ? "선거 정보" : "Infobox election";
-    return `{{${name}\n${paramBlock(P)}\n}}`;
+    return `{{${lang === "ko" ? "선거 정보" : "Infobox election"}\n${paramBlock(P)}\n}}`;
   }
 
   function wikiNextLeg(lang) {
@@ -618,26 +698,50 @@
   function wikiReferendum() {
     const s = state, P = [];
     const add = (k, v) => P.push([k, v]);
-    const com = (t) => P.push([null, `<!-- ${t} -->`]);
     const { list, opts } = choiceRows();
     const find = (re) => list.find((c) => re.test(c.label || ""));
-    const yes = opts[0], no = opts[1];
-    const total = find(/총|Total/i);
     add("name", toWiki(s.electionName));
+    add("country", s.country || "");
+    if (s.flagImage) add("flag_image", fileNameOf(s.flagImage, "Flag.svg"));
+    if (s.beforeElectionYear) { add("previous_referendum", sisterTitle(plain(s.beforeElectionYear))); add("previous_year", plain(s.beforeElectionYear)); }
+    add("date", toWiki(s.electionDate));
+    if (s.afterElectionYear) { add("next_referendum", sisterTitle(plain(s.afterElectionYear))); add("next_year", plain(s.afterElectionYear)); }
     add("title", toWiki(s.referendumQuestion));
-    add("yes", yes ? digits(yes.votes) : "");
-    add("no", no ? digits(no.votes) : "");
-    add("total", total ? digits(total.votes) : "");
-    add("electorate", digits(s.registeredVoters));
-    if (s.mapImage) { add("map", fileNameOf(s.mapImage, "Referendum_map.png")); }
-    const notes = [];
-    if (s.electionDate) notes.push(`투표일: ${toWiki(s.electionDate)}`);
-    if (s.turnoutDetails) notes.push(toWiki(s.turnoutDetails));
-    if (s.mapCaption) notes.push(toWiki(s.mapCaption));
-    (s.customStats || []).forEach((x) => { if (x.label && x.label.trim()) notes.push(`${toWiki(x.label)}: ${toWiki(x.value)}`); });
-    add("notes", notes.join("<br />"));
-    if (yes || no) com(`찬성 = ${plain(yes && yes.label)}, 반대 = ${plain(no && no.label)} 로 넣었습니다. 비율·유효표·무효표·투표율은 틀이 계산합니다`);
-    if (opts.length > 2) com(`이 틀은 찬반 두 선택지만 지원합니다: ${opts.slice(2).map((c) => plain(c.label)).join(", ")} 생략`);
+    (s.customStats || []).forEach((x) => {
+      if (!x.label || !x.label.trim()) return;
+      if (/투표 ?방식|결정 ?방식|voting/i.test(x.label)) add("voting_system", toWiki(x.value));
+      else if (/결과|outcome/i.test(x.label)) add("outcome", toWiki(x.value));
+    });
+    P.push([null, ""]);
+    if (opts.length > 2) {
+      // header8 "Results" + bar box: choiceN / choiceN_color / percentageN (최대 5개)
+      opts.slice(0, 5).forEach((c, i) => {
+        const n = i + 1, p = pctOf(c.percentage);
+        add(`choice${n}`, toWiki(c.label));
+        if (c.color) add(`choice${n}_color`, hexOf(c.color));
+        add(`percentage${n}`, isNaN(p) ? "" : String(p));
+      });
+    } else {
+      const yes = opts[0], no = opts[1];
+      const invalid = find(/무효|기권|백지|Invalid|Blank/i);
+      const total = find(/^(?!.*유효).*(총|Total)/i);
+      if (yes && !/^(찬성|yes)$/i.test(plain(yes.label))) add("yes_text", toWiki(yes.label));
+      add("yes", yes ? digits(yes.votes) : "");
+      if (no && !/^(반대|no)$/i.test(plain(no.label))) add("no_text", toWiki(no.label));
+      add("no", no ? digits(no.votes) : "");
+      if (invalid) add("invalid", digits(invalid.votes));
+      if (total) add("total", digits(total.votes));
+      const tp = pctOf(s.turnoutText);
+      if (!isNaN(tp)) add("turnoutpct", String(tp));
+      add("electorate", digits(s.registeredVoters));
+    }
+    P.push([null, ""]);
+    if (s.mapImage) {
+      add("map", fileNameOf(s.mapImage, "Referendum_map.png"));
+      add("map_size", "300px");
+      if (s.mapCaption) add("map_caption", toWiki(s.mapCaption));
+    }
+    if (s.turnoutDetails) add("notes", toWiki(s.turnoutDetails));
     return `{{Infobox referendum\n${paramBlock(P)}\n}}`;
   }
 
@@ -650,7 +754,7 @@
   }
   const CODE_NOTE = {
     "wiki-ko": "한국어 위키백과 {{선거 정보}} 틀 양식입니다. 매개변수 이름은 영어판 Infobox election과 같습니다.",
-    "wiki-en": "영어 위키백과 {{Infobox election}} 틀 양식입니다. 색상은 # 없이 colourN에 들어갑니다.",
+    "wiki-en": "영어 위키백과 {{Infobox election}} 틀 양식입니다. 색은 # 없이 colourN에, 후보는 한 줄 3칸 슬롯 번호로 들어갑니다.",
     "namu": "나무위키 편집창에 그대로 붙여 넣으면 미리보기와 같은 표가 됩니다. 다크 모드 색도 함께 지정했습니다."
   };
 
@@ -665,16 +769,13 @@
     const mock = $("mock");
     mock.className = `mock ${nm ? "mock-nm" : "mock-wp"}`;
     $("mock-title").textContent = plain(state.electionName) || "선거";
-    $("mock-sub").textContent = nm ? "최근 수정 시각: 방금 전" : "위키백과, 우리 모두의 백과사전.";
+    $("mock-sub").textContent = nm ? "최근 수정 시각: 방금 전" : (state.outputLang === "en" ? "From Wikipedia, the free encyclopedia" : "위키백과, 우리 모두의 백과사전.");
   }
   function renderCode() {
     const ref = state.electionType === "referendum";
     document.querySelectorAll("[data-code]").forEach((b) => {
       b.setAttribute("aria-pressed", String(b.dataset.code === state.codeTab));
-      if (b.dataset.code === "wiki-ko") b.textContent = ref ? "위키백과 국민투표" : "위키백과 한국어";
-      if (b.dataset.code === "wiki-en") b.classList.toggle("hidden", ref);
     });
-    if (ref && state.codeTab === "wiki-en") state.codeTab = "wiki-ko";
     $("code-out").value = codeFor(state.codeTab);
     $("code-note").textContent = ref && state.codeTab !== "namu"
       ? "{{Infobox referendum}} 틀 양식입니다. 숫자는 쉼표 없이 들어가며 비율과 투표율은 틀이 계산합니다."
@@ -695,6 +796,7 @@
     });
     $("in-type").value = state.electionType;
     $("in-perrow").value = state.candidatesPerRow || "auto";
+    $("in-ongoing").checked = !!state.ongoing;
   }
   function autoGrow(el) { el.style.height = "auto"; el.style.height = el.scrollHeight + 2 + "px"; }
 
@@ -815,6 +917,8 @@
   function applyToolbar() {
     document.querySelectorAll("[data-style]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.style === state.infoboxStyle)));
     document.querySelectorAll(".namu-only").forEach((el) => el.classList.toggle("hidden", state.infoboxStyle !== "namu"));
+    document.querySelectorAll(".wiki-only").forEach((el) => el.classList.toggle("hidden", state.infoboxStyle !== "wikipedia"));
+    document.querySelectorAll("[data-lang]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === (state.outputLang === "en" ? "en" : "ko"))));
     $("in-width").value = state.previewWidth;
     $("in-width-range").value = state.previewWidth;
     $("in-font").value = state.selectedFont || "wikipedia";
@@ -855,7 +959,7 @@
   }
   function loadData(data, keepView) {
     const d = normalize(data);
-    const view = { infoboxStyle: state.infoboxStyle, selectedFont: state.selectedFont, codeTab: state.codeTab, namuBallotNo: state.namuBallotNo };
+    const view = { infoboxStyle: state.infoboxStyle, selectedFont: state.selectedFont, codeTab: state.codeTab, namuBallotNo: state.namuBallotNo, outputLang: state.outputLang };
     const keys = Object.keys(state);
     keys.forEach((k) => { if (d[k] !== undefined) state[k] = d[k]; });
     ["electionName", "country", "electionDate", "flagImage", "beforeElectionYear", "afterElectionYear", "turnoutDetails", "registeredVoters", "turnoutText", "mapImage", "mapCaption", "title", "beforeElection", "beforeParty", "afterElection", "afterParty", "referendumQuestion"]
@@ -866,6 +970,7 @@
     state.candidatesPerRow = d.candidatesPerRow || "auto";
     state.previewWidth = clampWidth(d.previewWidth || 320);
     state.namuThemeColor = d.namuThemeColor || "";
+    state.ongoing = d.ongoing === true || d.ongoing === "yes";
     state.editingCandidateId = state.candidates.length ? String(state.candidates[0].id) : "";
     if (keepView) {
       Object.assign(state, view);
@@ -972,12 +1077,13 @@
       if (d.upload) { pickImage((data, name) => { state[d.upload] = data; syncMetaForm(); refresh(); toast(`${name} 사진을 넣었습니다`); }); return; }
       if (d.style) {
         state.infoboxStyle = d.style;
-        state.codeTab = d.style === "namu" ? "namu" : (state.codeTab === "namu" ? "wiki-ko" : state.codeTab);
+        state.codeTab = d.style === "namu" ? "namu" : (state.outputLang === "en" ? "wiki-en" : "wiki-ko");
         if (d.style === "namu" && state.previewWidth === 320) state.previewWidth = 400;
         else if (d.style === "wikipedia" && state.previewWidth === 400) state.previewWidth = 320;
         applyToolbar(); refresh(); return;
       }
-      if (d.code) { state.codeTab = d.code; renderCode(); return; }
+      if (d.code) { state.codeTab = d.code; if (d.code !== "namu") state.outputLang = d.code === "wiki-en" ? "en" : "ko"; applyToolbar(); refresh(); return; }
+      if (d.lang) { state.outputLang = d.lang; if (state.codeTab !== "namu") state.codeTab = d.lang === "en" ? "wiki-en" : "wiki-ko"; applyToolbar(); refresh(); return; }
     });
 
     $("btn-del-cand").addEventListener("click", () => {
@@ -1022,6 +1128,7 @@
       }
       renderEditor(); applyToolbar(); refresh();
     });
+    $("in-ongoing").addEventListener("change", (e) => { state.ongoing = e.target.checked; refresh(); });
     $("in-perrow").addEventListener("change", (e) => { state.candidatesPerRow = e.target.value; refresh(); });
 
     // 툴바

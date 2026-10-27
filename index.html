@@ -225,7 +225,8 @@
           </div>
         </div>
         <div class="group">
-          <div class="group-head"><div><h2>선거 전과 후</h2><p id="ba-hint">인포박스 맨 아래에 나옵니다</p></div></div>
+          <div class="group-head"><div><h2>선거 전과 후</h2><p id="ba-hint">위키백과에서는 공직·기관 명칭이 있어야 맨 아래에 나옵니다</p></div></div>
+          <label class="tool" style="font-weight:500"><input type="checkbox" id="in-ongoing"> 아직 결과가 나오지 않은 선거 (ongoing = yes, 선거 전 칸이 ‘현직’으로 바뀜)</label>
           <div class="row">
             <div class="field"><label for="in-bname">선거 전 인물·상태</label><input id="in-bname" class="input" data-bind="beforeElection"></div>
             <div class="field"><label for="in-bparty">선거 전 정당·조직</label><input id="in-bparty" class="input" data-bind="beforeParty"></div>
@@ -269,6 +270,10 @@
       <div class="seg" role="group" aria-label="인포박스 양식">
         <button type="button" data-style="wikipedia" aria-pressed="true"><span class="glyph glyph-wp">W</span>위키백과</button>
         <button type="button" data-style="namu" aria-pressed="false"><span class="glyph glyph-nm">N</span>나무위키</button>
+      </div>
+      <div class="seg seg-sm wiki-only" role="group" aria-label="위키백과 언어">
+        <button type="button" data-lang="ko" aria-pressed="true">한국어</button>
+        <button type="button" data-lang="en" aria-pressed="false">English</button>
       </div>
       <label class="tool">너비
         <input type="range" id="in-width-range" min="260" max="600" step="5">

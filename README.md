@@ -13,12 +13,18 @@
   - 나무마크 표 코드
 - PNG 저장, JSON 저장·불러오기 (이전 버전 JSON도 그대로 불러옴), 예제 5종
 
+## 위키백과 양식
+
+- 영어판 `Template:Infobox election`, `Template:Infobox referendum` 소스 구조를 따름
+- 미리보기는 한국어/English 전환: 틀이 정하는 라벨(Registered, Turnout, First party, Elected …, Results 등)이 언어에 맞게 바뀌고, 직접 입력한 내용은 그대로
+- `ongoing = yes`면 왼쪽 칸이 현직(Incumbent)으로, 결과가 없으면 미정(TBD)
+
 ## 템플릿 규칙 반영
 
 - `colourN`은 `#` 없이 넣음
 - 틀은 한 줄에 3명이라, 2명씩 배치하면 1·2 / 4·5 / 7·8 칸을 사용
 - 이름이 정해진 매개변수가 없는 항목은 `1blank`~`6blank` / `NdataM` 보조 행으로 출력
-- 국민투표 숫자는 쉼표 없이 출력 (비율·유효표·투표율은 틀이 계산)
+- 국민투표: 찬반 두 개면 `yes`/`no`/`invalid`/`total`/`turnoutpct`/`electorate`, 선택지가 셋 이상이면 `choiceN`/`percentageN` 막대 (숫자는 쉼표 없이)
 
 ## 서식
 

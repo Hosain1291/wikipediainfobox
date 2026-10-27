@@ -300,7 +300,7 @@ details.fold .fold-body { padding: 0 14px 14px; display: flex; flex-direction: c
 .ph svg { width: 46%; height: auto; max-width: 48px; }
 
 /* =========================================================
-   위키백과 인포박스 (Vector 2022 기준)
+   위키백과 인포박스 — Module:Infobox 표 + Infobox election / referendum 소스 값
    ========================================================= */
 .wp-ib {
   border: 1px solid #a2a9b1; border-spacing: 3px; background: #f8f9fa; color: #202122;
@@ -308,62 +308,68 @@ details.fold .fold-body { padding: 0 14px 14px; display: flex; flex-direction: c
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Lato, Helvetica, Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
 .wp-ib a, .wp-a { color: #3366cc; text-decoration: none; }
-.wp-ib td, .wp-ib th { vertical-align: top; padding: .2em .3em; }
+.wp-ib td, .wp-ib th { vertical-align: top; }
 .wp-ib .up { color: #14866d; font-size: .85em; }
 .wp-ib .down { color: #d33; font-size: .85em; }
 .wp-ib .steady { color: #72777d; font-size: .85em; }
-.wp-above { font-size: 125%; font-weight: bold; text-align: center; line-height: 1.25; padding: .3em .2em !important; }
-.wp-center { text-align: center; }
-.wp-flag img { max-height: 32px; max-width: 70px; border: 1px solid #c8ccd1; vertical-align: middle; }
-.wp-nav td { vertical-align: middle !important; }
-.wp-nav .l { text-align: left; width: 25%; white-space: nowrap; }
-.wp-nav .c { text-align: center; }
-.wp-nav .r { text-align: right; width: 25%; white-space: nowrap; }
-.wp-hr td { padding: 0 !important; }
-.wp-hr div { border-top: 1px solid #a2a9b1; }
-.wp-note { text-align: center; }
-.wp-kv { width: 100%; border-collapse: collapse; }
-.wp-kv th { text-align: left; font-weight: bold; white-space: nowrap; padding: .1em .4em .1em 0; width: 1%; }
-.wp-kv td { padding: .1em 0; }
-.wp-kv.centered th { text-align: right; width: 50%; }
-.wp-kv.centered td { text-align: left; padding-left: .4em; }
-.wp-header { background: #eaecf0; text-align: center; font-weight: bold; }
-.wp-cands { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
-.wp-cands + .wp-cands { margin-top: .5em; padding-top: .4em; border-top: 1px solid #a2a9b1; }
-.wp-cands th { text-align: left; font-weight: bold; padding: .15em .3em .15em 0; vertical-align: middle; line-height: 1.3; }
-.wp-cands td { text-align: center; padding: .15em .2em; vertical-align: middle; line-height: 1.35; overflow-wrap: anywhere; }
-.wp-cands .img td { vertical-align: bottom; padding-bottom: .35em; }
-.wp-portrait { width: min(100%, 110px); aspect-ratio: 4 / 5; margin: 0 auto; overflow: hidden; background: #eaecf0; }
+.wp-ib hr { height: 1px; border: 0; background: #a2a9b1; margin: .2em 0; }
+.wp-ib caption.infobox-title { font-size: 125%; font-weight: bold; padding: .2em; line-height: 1.25; caption-side: top; text-align: center; }
+.wp-ib .infobox-subheader { text-align: center; padding: 0 .2em; }
+.wp-ib .infobox-header { text-align: center; font-weight: normal; padding: 0 .2em; }
+.wp-ib .infobox-header hr { margin-bottom: .3em; }
+.wp-ib .infobox-label { text-align: left; font-weight: bold; padding: .1em .4em .1em .2em; white-space: nowrap; width: 1%; }
+.wp-ib .infobox-data { text-align: left; padding: .1em .2em; }
+.wp-ib .infobox-full-data { text-align: center; padding: 0 .2em; }
+.wp-ib .infobox-below { text-align: center; }
+.wp-ib .wp-hrcell { padding: 0 .2em; }
+.wp-flag50 { width: 50px; height: auto; display: block; margin: .2em auto 0; border: 1px solid #c8ccd1; }
+.wp-map300 { max-width: min(100%, 300px); height: auto; display: block; margin: 0 auto; }
+
+/* {{succession links}} */
+.wp-succ { width: 100%; border-collapse: collapse; background: transparent; }
+.wp-succ td { padding: 0; vertical-align: middle; }
+.wp-succ .l { text-align: left; } .wp-succ .c { text-align: center; } .wp-succ .r { text-align: right; }
+
+/* Module:Infobox election row */
+.wp-cands { width: 100%; border-collapse: collapse; table-layout: fixed; background: transparent; }
+.wp-cands .wp-labcol { width: 25%; }
+.wp-cands td, .wp-cands th { text-align: center; padding: .1em .2em; vertical-align: middle; line-height: 1.35; overflow-wrap: anywhere; }
+.wp-cands th.wp-rowlabel { text-align: left; font-weight: bold; padding-left: 0; }
+.wp-cands .wp-head th { font-weight: bold; }
+.wp-cands .wp-imgrow td { vertical-align: bottom; padding-bottom: .2em; }
+.wp-portrait { width: min(100%, 120px); aspect-ratio: 4 / 5; max-height: 150px; margin: 0 auto; overflow: hidden; background: #eaecf0; }
 .wp-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.wp-colorbar td { height: 5px; padding: 0 !important; }
-.wp-colorbar td.blank { background: transparent; }
-.wp-map img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
-.wp-caption { font-size: 92%; line-height: 1.4em; text-align: center; padding-top: .3em; }
-.wp-ba { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.wp-ba td { padding: .15em .2em; vertical-align: top; line-height: 1.35; }
-.wp-ba .h { font-weight: bold; }
-.wp-ba .b { text-align: left; }
-.wp-ba .a { text-align: right; }
-.wp-ba .arr { width: 24px; text-align: center; vertical-align: middle; color: #72777d; }
-.wp-ba .chip { display: inline-block; width: .7em; height: .7em; margin: 0 .25em; vertical-align: baseline; }
-.wp-results { width: 100%; border-collapse: collapse; }
-.wp-results th { background: #eaecf0; border: 1px solid #a2a9b1; padding: .2em .4em; font-weight: bold; }
-.wp-results td { border: 1px solid #a2a9b1; padding: .2em .4em; background: #fff; }
+.wp-colorbar td { height: 5px; padding: 0 2px !important; background-clip: content-box; }
+.wp-colorbar td:first-child { background: transparent !important; }
+
+/* data15 선거 전/후 */
+.wp-ba { width: 100%; border-collapse: collapse; background: transparent; }
+.wp-ba td { padding: 0; vertical-align: top; line-height: 1.4; }
+
+/* Infobox referendum */
+.ib-referendum .infobox-header.wp-refhead { background: #efefef; font-weight: bold; }
+.wp-qbox { box-sizing: border-box; width: calc(100% - 16px); max-width: 24em; margin: .3em auto; padding: .4em .5em; background: #f8f9fa; border: 2px solid #a2a9b1; text-align: center; }
+.wp-refbelow { text-align: left !important; background: #fafafa; border-top: 1px solid #aaa; padding: .2em !important; }
+.wp-results { width: 100%; border-collapse: collapse; text-align: left; }
+.wp-results th { font-weight: bold; padding: .15em .3em; border-bottom: 1px solid #a2a9b1; }
+.wp-results td { padding: .15em .3em; }
 .wp-results .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.wp-results tr.total td { background: #f8f9fa; font-weight: bold; }
 .wp-results tr.win td { font-weight: bold; }
+.wp-results tr.sub td { border-top: 1px solid #eaecf0; }
+.wp-results tr.total td { font-weight: bold; border-top: 1px solid #a2a9b1; }
 .wp-results .mark { display: inline-block; width: 1.1em; font-weight: bold; }
 .wp-results .yes { color: #14866d; } .wp-results .no { color: #d33; }
+.wp-barbox { text-align: left; padding: .2em 0; }
+.wp-barrow { margin: .15em 0 .35em; }
+.wp-bar { display: inline-block; width: min(180px, 75%); height: 1em; vertical-align: middle; background: #fff; border: 1px solid #c8ccd1; }
+.wp-bar span { display: block; height: 100%; }
+.wp-barpct { margin-left: .4em; font-size: 95%; }
+
 .wp-table { width: 100%; border-collapse: collapse; }
 .wp-table th { background: #eaecf0; border: 1px solid #a2a9b1; padding: .2em .4em; }
 .wp-table td { border: 1px solid #a2a9b1; padding: .2em .4em; background: #fff; }
 .wp-table .sw { width: 6px; padding: 0 !important; }
 .wp-table .num { text-align: right; font-weight: bold; }
-
-.vbar { position: relative; display: flex; height: 20px; overflow: hidden; border: 1px solid #a2a9b1; background: #eaecf0; }
-.vbar span { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-shadow: 0 0 2px rgba(0,0,0,.35); }
-.vbar .mid { position: absolute; left: 50%; top: -1px; bottom: -1px; width: 0; border-left: 2px solid #202122; }
-.vbar-legend { display: flex; justify-content: space-between; font-size: 90%; margin-top: 2px; }
 
 /* =========================================================
    나무위키 인포박스 (나무마크 표 렌더링 기준)
@@ -402,3 +408,4 @@ details.fold .fold-body { padding: 0 14px 14px; display: flex; flex-direction: c
   .row-3 .field:nth-child(2) { grid-column: 1 / -1; order: -1; }
   .stage { padding: 12px; }
 }
+.ph-map { height: 90px; font-size: 11px; color: #72777d; }
