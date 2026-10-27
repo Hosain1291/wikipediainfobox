@@ -17,6 +17,7 @@
 
 - 영어판 `Template:Infobox election`, `Template:Infobox referendum` 소스 구조를 따름
 - 미리보기는 한국어/English 전환: 틀이 정하는 라벨(Registered, Turnout, First party, Elected …, Results 등)이 언어에 맞게 바뀌고, 직접 입력한 내용은 그대로
+- 한국어 모드에는 한국어만, English 모드에는 영어만 나오도록 예제도 언어별로 따로 있음 (고치지 않은 예제는 언어를 바꾸면 함께 바뀜)
 - `ongoing = yes`면 왼쪽 칸이 현직(Incumbent)으로, 결과가 없으면 미정(TBD)
 
 ## 템플릿 규칙 반영

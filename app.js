@@ -35,6 +35,19 @@
     next_legislative: [{ id: "seatsWon", label: "현재 의석", type: "text" }],
     referendum: []
   };
+  const FIELD_LABEL_EN = {
+    image: "Image", votes: "Popular vote", percentage: "Percentage", alliance: "Alliance", lastElection: "Last election",
+    seatsWon: "Seats won", seatChange: "Seat change", constituencyVote: "Constituency vote", constituencyPercent: "Constituency %",
+    regionalVote: "List vote", regionalPercent: "List %", regionalSeatsLast: "Metro. last election", municipalSeatsLast: "Mun. last election",
+    regionalSeatsWon: "Metro. seats won", municipalSeatsWon: "Mun. seats won", regionalSeatsChange: "Metro. change", municipalSeatsChange: "Mun. change"
+  };
+  const defaultFields = (type) => {
+    const f = clone(DEFAULT_FIELDS[type] || []);
+    if (state.outputLang === "en") f.forEach((x) => { if (FIELD_LABEL_EN[x.id]) x.label = FIELD_LABEL_EN[x.id]; });
+    if (type === "next_legislative" && state.outputLang === "en") f[0].label = "Current seats";
+    return f;
+  };
+  const isEn = () => state.outputLang === "en";
   const CHOICE_COLORS = ["#2e8540", "#c62828", "#1f5fbf", "#b7791f", "#6b46c1", "#2c7a7b"];
   const uid = (p) => p + Math.random().toString(36).slice(2, 9);
   const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -333,7 +346,7 @@
         if (!row.some((c) => String(fn(c)).replace(/<[^>]*>/g, "").trim())) return; // 빈 행은 틀처럼 생략
         rowsOut.push(`<tr><th scope="row" class="wp-rowlabel">${lab}</th>${cellsFor(fn)}</tr>`);
       });
-      html += `${ri > 0 ? "<hr>" : ""}<table class="wp-cands"><colgroup><col class="wp-labcol">${row.map(() => "<col>").join("")}</colgroup><tbody>${rowsOut.map((r) => r.replace(/^<tr class="(wp-head|wp-imgrow|wp-colorbar)">/, '<tr class="$1"><td></td>')).join("")}</tbody></table>`;
+      html += `${ri > 0 ? "<hr>" : ""}<table class="wp-cands"><colgroup><col class="wp-labcol" style="width:${isEn() ? 31 : 25}%">${row.map(() => "<col>").join("")}</colgroup><tbody>${rowsOut.map((r) => r.replace(/^<tr class="(wp-head|wp-imgrow|wp-colorbar)">/, '<tr class="$1"><td></td>')).join("")}</tbody></table>`;
     });
     return `<tr><td colspan="2" class="infobox-full-data">${html || W().empty}</td></tr>`;
   }
@@ -933,7 +946,7 @@
     d = clone(d || {});
     if (!d.electionType) d.electionType = "presidential";
     if (d.electionType === "referendum") d.referendumChoices = d.referendumChoices || [];
-    if (!d.candidateFieldsConfig || !d.candidateFieldsConfig.length) d.candidateFieldsConfig = clone(DEFAULT_FIELDS[d.electionType] || DEFAULT_FIELDS.presidential);
+    if (!d.candidateFieldsConfig || !d.candidateFieldsConfig.length) d.candidateFieldsConfig = defaultFields(DEFAULT_FIELDS[d.electionType] ? d.electionType : "presidential");
     d.candidateFieldsConfig.forEach((f) => {
       if (!f.type) f.type = f.id === "image" || /이미지|사진/.test(f.label || "") ? "image" : "text";
       if (!f.label) f.label = "새 항목";
@@ -983,6 +996,23 @@
   }
   const clampWidth = (v) => { v = parseInt(v, 10); if (isNaN(v)) v = 320; return Math.max(260, Math.min(600, v)); };
 
+  /* ---------- 예제: 언어별로 불러오고, 고치지 않았으면 언어 전환 때 바꿔 끼움 ---------- */
+  let presetKey = "", presetDirty = false;
+  function loadPreset(key) {
+    const src = (isEn() ? window.PRESETS_EN : window.PRESETS) || {};
+    const p = src[key] || (window.PRESETS || {})[key];
+    if (!p) return null;
+    loadData(p, true);
+    presetKey = key; presetDirty = false;
+    return p;
+  }
+  function setLang(lang) {
+    state.outputLang = lang;
+    if (state.codeTab !== "namu") state.codeTab = lang === "en" ? "wiki-en" : "wiki-ko";
+    if (presetKey && !presetDirty) loadPreset(presetKey);
+    applyToolbar(); refresh();
+  }
+
   /* =========================================================
      이벤트
      ========================================================= */
@@ -1001,6 +1031,7 @@
     // 입력 일괄 처리
     document.addEventListener("input", (e) => {
       const el = e.target;
+      if (el.closest && el.closest(".editor")) presetDirty = true;
       if (el.classList && el.classList.contains("grow")) autoGrow(el);
       if (el.dataset.bind) { state[el.dataset.bind] = el.value; refresh(); return; }
       if (el.dataset.cand) {
@@ -1036,6 +1067,7 @@
 
     document.addEventListener("change", (e) => {
       const el = e.target;
+      if (el.closest && el.closest(".editor")) presetDirty = true;
       if (el.dataset.ftype) {
         const f = fields().find((x) => x.id === el.dataset.ftype);
         if (f) { f.type = el.value; renderCandCard(); refresh(); }
@@ -1046,6 +1078,7 @@
     document.addEventListener("click", (e) => {
       const t = e.target.closest("button");
       if (!t) return;
+      if (t.closest(".editor") && !t.dataset.step && !t.dataset.goto && !t.dataset.pick) presetDirty = true;
       const d = t.dataset;
       if (d.pick) { state.editingCandidateId = d.pick; renderChips(); renderCandCard(); return; }
       if (d.move) {
@@ -1058,7 +1091,7 @@
         if (state.candidates.length >= 9) { toast("인포박스 틀은 후보를 9명까지 지원합니다"); return; }
         const id = String(state.candidates.reduce((m, c) => Math.max(m, parseInt(c.id, 10) || 0), 0) + 1);
         const palette = ["#004ea2", "#e61e2b", "#ff7016", "#00a85a", "#7b2d8e", "#ffc800", "#0aa1dd", "#8b5a2b", "#4d4d4d"];
-        state.candidates.push({ id, name: `후보 ${id}`, party: "정당", color: palette[(state.candidates.length) % palette.length], fieldValues: {} });
+        state.candidates.push({ id, name: isEn() ? `Candidate ${id}` : `후보 ${id}`, party: isEn() ? "Party" : "정당", color: palette[(state.candidates.length) % palette.length], fieldValues: {} });
         state.editingCandidateId = id;
         renderChips(); renderCandCard(); refresh();
         setTimeout(() => { $("cand-name").focus(); $("cand-name").select(); }, 0);
@@ -1082,8 +1115,12 @@
         else if (d.style === "wikipedia" && state.previewWidth === 400) state.previewWidth = 320;
         applyToolbar(); refresh(); return;
       }
-      if (d.code) { state.codeTab = d.code; if (d.code !== "namu") state.outputLang = d.code === "wiki-en" ? "en" : "ko"; applyToolbar(); refresh(); return; }
-      if (d.lang) { state.outputLang = d.lang; if (state.codeTab !== "namu") state.codeTab = d.lang === "en" ? "wiki-en" : "wiki-ko"; applyToolbar(); refresh(); return; }
+      if (d.code) {
+        state.codeTab = d.code;
+        if (d.code !== "namu" && (d.code === "wiki-en") !== isEn()) { setLang(d.code === "wiki-en" ? "en" : "ko"); return; }
+        applyToolbar(); refresh(); return;
+      }
+      if (d.lang) { setLang(d.lang); return; }
     });
 
     $("btn-del-cand").addEventListener("click", () => {
@@ -1107,23 +1144,18 @@
 
     $("btn-add-stat").addEventListener("click", () => { state.customStats.push({ id: uid("s_"), label: "", value: "" }); renderStats(); refresh(); const ins = $("stats-list").querySelectorAll("input"); if (ins.length) ins[ins.length - 2].focus(); });
     $("btn-add-choice").addEventListener("click", () => { state.referendumChoices.push({ id: uid("rc_"), label: "", votes: "", percentage: "" }); renderChoices(); refresh(); });
-    $("btn-add-field").addEventListener("click", () => { state.candidateFieldsConfig.push({ id: uid("field_"), label: "새 항목", type: "text" }); renderFieldsCfg(); renderCandCard(); refresh(); });
-    $("btn-reset-fields").addEventListener("click", () => { state.candidateFieldsConfig = clone(DEFAULT_FIELDS[state.electionType] || []); renderFieldsCfg(); renderCandCard(); refresh(); toast("항목 구성을 기본값으로 되돌렸습니다"); });
+    $("btn-add-field").addEventListener("click", () => { state.candidateFieldsConfig.push({ id: uid("field_"), label: isEn() ? "New row" : "새 항목", type: "text" }); renderFieldsCfg(); renderCandCard(); refresh(); });
+    $("btn-reset-fields").addEventListener("click", () => { state.candidateFieldsConfig = defaultFields(state.electionType); renderFieldsCfg(); renderCandCard(); refresh(); toast("항목 구성을 기본값으로 되돌렸습니다"); });
 
     $("in-type").addEventListener("change", (e) => {
       state.electionType = e.target.value;
-      state.candidateFieldsConfig = clone(DEFAULT_FIELDS[state.electionType] || []);
+      state.candidateFieldsConfig = defaultFields(state.electionType);
       if (state.electionType === "referendum" && !state.referendumChoices.length) {
-        state.referendumChoices = [
-          { id: uid("rc_"), label: "찬성", votes: "", percentage: "", color: CHOICE_COLORS[0] },
-          { id: uid("rc_"), label: "반대", votes: "", percentage: "", color: CHOICE_COLORS[1] },
-          { id: uid("rc_"), label: "유효 투표수", votes: "", percentage: "" },
-          { id: uid("rc_"), label: "무효·기권표", votes: "", percentage: "" },
-          { id: uid("rc_"), label: "총 투표수", votes: "", percentage: "" }
-        ];
+        const L = isEn() ? ["Yes", "No", "Valid votes", "Invalid or blank votes", "Total votes"] : ["찬성", "반대", "유효 투표수", "무효·기권표", "총 투표수"];
+        state.referendumChoices = L.map((label, i) => ({ id: uid("rc_"), label, votes: "", percentage: "", ...(i < 2 ? { color: CHOICE_COLORS[i] } : {}) }));
       }
       if (state.electionType !== "referendum" && !state.candidates.length) {
-        state.candidates = [{ id: "1", name: "후보 1", party: "정당", color: "#004ea2", fieldValues: {} }];
+        state.candidates = [{ id: "1", name: isEn() ? "Candidate 1" : "후보 1", party: isEn() ? "Party" : "정당", color: "#004ea2", fieldValues: {} }];
         state.editingCandidateId = "1";
       }
       renderEditor(); applyToolbar(); refresh();
@@ -1144,8 +1176,8 @@
 
     // 데이터
     $("preset-select").addEventListener("change", (e) => {
-      const p = window.PRESETS && window.PRESETS[e.target.value];
-      if (p) { loadData(p, true); toast(`${p.electionName} 예제를 불러왔습니다`); }
+      const p = loadPreset(e.target.value);
+      if (p) toast(`${p.electionName} 예제를 불러왔습니다`);
       e.target.value = "";
     });
     $("btn-export").addEventListener("click", exportJson);
@@ -1189,6 +1221,7 @@
         const d = JSON.parse(r.result);
         if (!d || (!d.electionType && !d.candidates && !d.referendumChoices)) throw new Error("bad");
         loadData(d, false);
+        presetKey = ""; presetDirty = false;
         if (d.infoboxStyle) applyToolbar();
         toast("JSON 파일을 불러왔습니다");
       } catch (err) {
@@ -1230,7 +1263,7 @@
   /* ---------- 시작 ---------- */
   function init() {
     bind();
-    loadData(window.PRESETS ? window.PRESETS.ko_pres_2025_fictional : {}, true);
+    if (!loadPreset("ko_pres_2025_fictional")) loadData({}, true);
     window.__infobox = { state: () => state, codeFor, loadData }; // 디버깅용
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
