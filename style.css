@@ -409,3 +409,22 @@ details.fold .fold-body { padding: 0 14px 14px; display: flex; flex-direction: c
   .stage { padding: 12px; }
 }
 .ph-map { height: 90px; font-size: 11px; color: #72777d; }
+
+/* Infobox legislative election */
+.ib-legis-elect .wikitable { width: 100%; border-collapse: collapse; background: #f8f9fa; color: #202122; margin: .3em 0 0; font-size: 100%; }
+.ib-legis-elect .wikitable th, .ib-legis-elect .wikitable td { border: 1px solid #a2a9b1; padding: .2em .4em; }
+.ib-legis-elect .wikitable thead th { background: #eaecf0; text-align: center; font-weight: bold; }
+.ib-legis-elect .leg-sw { width: 6px; padding: 0 !important; }
+.ib-legis-elect .leg-party { background: #f8f9fa; text-align: left; font-weight: normal; }
+.ib-legis-elect .leg-leader { text-align: left; }
+.ib-legis-elect .leg-num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; background: #fff; }
+.ib-legis-elect .leg-heading { background: #eaecf0; text-align: center; }
+.ib-legis-elect-disclaimer { font-size: 88%; line-height: 1.3; padding: .2em 0 .3em; text-align: center; }
+.ib-legis-elect-map { width: 100%; border-collapse: collapse; }
+.ib-legis-elect-map .infobox-image { text-align: center; padding: .3em 0; }
+.ib-legis-elect-map .infobox-caption { font-size: 92%; line-height: 1.35; padding-top: .2em; }
+.ib-legis-elect-befaft { width: 100%; border-collapse: collapse; border-top: 1px solid #a2a9b1; margin-top: .2em; }
+.ib-legis-elect-befaft th { text-align: left; font-weight: bold; padding: .2em 0 0; }
+.ib-legis-elect-befaft td { vertical-align: top; padding: 0 0 .2em; text-align: left; }
+.ib-legis-elect-befaft .r { text-align: right; }
+.ib-legis-elect-befaft .half { width: 50%; }

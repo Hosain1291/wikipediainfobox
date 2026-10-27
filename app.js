@@ -33,6 +33,11 @@
       { id: "municipalSeatsChange", label: "기초 증감", type: "text" }
     ],
     next_legislative: [{ id: "seatsWon", label: "현재 의석", type: "text" }],
+    legislative_election: [
+      { id: "percentage", label: "득표율", type: "text" },
+      { id: "seatsWon", label: "의석", type: "text" },
+      { id: "lastElection", label: "이전 선거 의석", type: "text" }
+    ],
     referendum: []
   };
   const FIELD_LABEL_EN = {
@@ -45,6 +50,7 @@
     const f = clone(DEFAULT_FIELDS[type] || []);
     if (state.outputLang === "en") f.forEach((x) => { if (FIELD_LABEL_EN[x.id]) x.label = FIELD_LABEL_EN[x.id]; });
     if (type === "next_legislative" && state.outputLang === "en") f[0].label = "Current seats";
+    if (type === "legislative_election" && state.outputLang === "en") f.forEach((x) => { x.label = { percentage: "Vote %", seatsWon: "Seats", lastElection: "Last election" }[x.id] || x.label; });
     return f;
   };
   const isEn = () => state.outputLang === "en";
@@ -63,6 +69,7 @@
     editingCandidateId: "1", candidatesPerRow: "auto",
     outputLang: "ko", selectedFont: "wikipedia",
     infoboxStyle: "wikipedia", namuThemeColor: "", namuBallotNo: true, ongoing: false,
+    legisNoLeader: false, legisNoPct: false, legisFirst: false,
     codeTab: "wiki-ko"
   };
 
@@ -437,10 +444,178 @@
     return b;
   }
 
+  /* =========================================================
+     Template:Infobox legislative election — 정당 표 형식
+     ========================================================= */
+  const LEG_TXT = {
+    ko: {
+      party: "정당", leader: "대표", pct: "득표율", seats: "의석", change: "+/–", current: "현재 의석", before: "선거 전 의석",
+      turnout: "투표율", disclaimer: "의석을 얻은 정당만 표시합니다. 전체 결과는 아래를 참고하세요.",
+      bHead: (t) => `선거 전 ${t}`, aHead: (t) => `선거 후 ${t}`, incumbent: (t) => `현직 ${t}`
+    },
+    en: {
+      party: "Party", leader: "Leader", pct: "Vote %", seats: "Seats", change: "+/–", current: "Current seats", before: "Seats before",
+      turnout: "Turnout", disclaimer: "This lists parties that won seats. See the complete results below.",
+      bHead: (t) => `${t} before`, aHead: (t) => `${t} after`, incumbent: (t) => `Incumbent ${t}`
+    }
+  };
+  const LT = () => LEG_TXT[isEn() ? "en" : "ko"];
+  const legField = (re, ids) => textFields().find((f) => ids.includes(f.id)) || textFields().find((f) => re.test(f.label));
+  function legFields() {
+    return {
+      pct: legField(/득표율|Vote %|Percentage/i, ["percentage"]),
+      seats: legField(/^의석$|Seats( won)?$|획득/i, ["seatsWon", "seats"]),
+      last: legField(/이전 선거|Last election/i, ["lastElection"]),
+      current: legField(/현재 의석|Current seats/i, ["currentSeats"]),
+      heading: textFields().find((f) => f.id === "heading")
+    };
+  }
+  function legColumns() {
+    const s = state, o = [];
+    o.push("party");
+    if (!s.legisNoLeader) o.push("leader");
+    if (s.ongoing) { if (!s.legisFirst) o.push("current"); }
+    else {
+      if (!s.legisNoPct) o.push("pct");
+      o.push("seats");
+      if (!s.legisFirst) o.push("change");
+    }
+    return o;
+  }
+  const num = (v) => { const d = digits(v); return d === "" ? NaN : parseInt(d, 10); };
+  function legChange(c, F) {
+    const a = num(F.seats && c.fieldValues[F.seats.id]), b = num(F.last && c.fieldValues[F.last.id]);
+    if (isNaN(a) || isNaN(b)) return "";
+    const d = a - b;
+    return d > 0 ? `+${d}` : d < 0 ? `−${-d}` : "0";
+  }
+  function legCellValue(col, c, F) {
+    const fv = c.fieldValues || {};
+    if (col === "leader") return c.name;
+    if (col === "pct") return F.pct ? fv[F.pct.id] : "";
+    if (col === "seats") return F.seats ? fv[F.seats.id] : "";
+    if (col === "current") return F.current ? fv[F.current.id] : (F.seats ? fv[F.seats.id] : "");
+    if (col === "change") return legChange(c, F);
+    return "";
+  }
+  const legHead = (col) => {
+    const t = LT();
+    if (col === "current") return state.ongoing === "counting" ? t.before : t.current;
+    return t[col];
+  };
+
+  function wpLegTable() {
+    const s = state, F = legFields(), cols = legColumns();
+    const numCols = cols.filter((x) => x !== "party");
+    let h = `<table class="wikitable ib-legis-elect-results"><thead><tr><th colspan="2">${LT().party}</th>${numCols.map((c) => `<th>${legHead(c)}</th>`).join("")}</tr></thead><tbody>`;
+    s.candidates.forEach((c) => {
+      const heading = F.heading && c.fieldValues[F.heading.id];
+      if (heading) h += `<tr><th colspan="${cols.length + 1}" class="leg-heading">${fmt(heading)}</th></tr>`;
+      h += `<tr><td class="leg-sw" style="background:${hexOf(c.color)}"></td><th scope="row" class="leg-party"><a>${fmt(c.party)}</a></th>${numCols.map((col) => {
+        const v = legCellValue(col, c, F);
+        return `<td class="${col === "leader" ? "leg-leader" : "leg-num"}">${col === "leader" ? `<a>${fmt(v)}</a>` : fmt(v)}</td>`;
+      }).join("")}</tr>`;
+    });
+    h += "</tbody></table>";
+    if (!s.ongoing) h += `<div class="ib-legis-elect-disclaimer">${LT().disclaimer}</div>`;
+    return h;
+  }
+
+  function renderLegislative() {
+    const s = state, t = LT();
+    let b = "";
+    b += wpFlag();
+    // previous_election / next_election 이 있으면 succession links, 없으면 날짜만
+    if (s.beforeElectionYear || s.afterElectionYear) b += wpSuccession(s.beforeElectionYear, s.electionDate, s.afterElectionYear);
+    else if (s.electionDate) b += `<tr><td colspan="2" class="infobox-subheader"><b>${fmt(s.electionDate)}</b></td></tr>`;
+    if (s.turnoutDetails) b += `<tr><td colspan="2" class="infobox-full-data"><hr>${fmt(s.turnoutDetails)}</td></tr>`;
+    if (s.turnoutText) b += wpLabel(t.turnout, fmt(s.turnoutText));
+    b += wpExtraStats();
+    if (s.candidates.length) b += `<tr><td colspan="2" class="infobox-full-data">${wpLegTable()}</td></tr>`;
+    if (s.mapImage) {
+      b += `<tr><td colspan="2" class="infobox-full-data"><table class="ib-legis-elect-map"><tr><td class="infobox-image">
+        <img class="wp-map300" src="${escAttr(s.mapImage)}" alt="" crossorigin="anonymous" onerror="window.__mapFail(this)">
+        ${s.mapCaption ? `<div class="infobox-caption">${fmt(s.mapCaption)}</div>` : ""}</td></tr></table></td></tr>`;
+    }
+    if (s.beforeElection || s.afterElection) {
+      const ti = plain(s.title);
+      const lh = s.beforeElection ? (s.ongoing ? t.incumbent(ti) : t.bHead(ti)) : "";
+      const rh = !s.ongoing && s.afterElection ? t.aHead(ti) : "";
+      const party = (p) => (p ? `<br><a>${fmt(p)}</a>` : "");
+      b += `<tr><td colspan="2" class="infobox-full-data"><table class="ib-legis-elect-befaft"><tr><th scope="col">${escHtml(lh)}</th><th scope="col" class="r">${escHtml(rh)}</th></tr>
+        <tr><td class="half">${fmt(s.beforeElection)}${s.beforeElection ? party(s.beforeParty) : ""}</td>
+        <td class="half r">${s.ongoing ? "" : (s.afterElection ? fmt(s.afterElection) + party(s.afterParty) : "")}</td></tr></table></td></tr>`;
+    }
+    return b;
+  }
+
+  function wikiLegislative(lang) {
+    const s = state, P = [];
+    const add = (k, v) => P.push([k, v]);
+    const F = legFields();
+    const link = (y) => `[[${sisterTitle(plain(y))}|${plain(y)}]]`;
+    add("election_name", toWiki(s.electionName));
+    add("country", s.country || "");
+    if (s.flagImage) add("flag_image", fileNameOf(s.flagImage, "Flag.svg"));
+    if (s.beforeElectionYear) add("previous_election", link(s.beforeElectionYear));
+    add("election_date", toWiki(s.electionDate));
+    if (s.afterElectionYear) add("next_election", link(s.afterElectionYear));
+    if (s.turnoutDetails) add("seats_for_election", toWiki(s.turnoutDetails));
+    if (s.turnoutText) add("turnout", toWiki(s.turnoutText));
+    if (s.ongoing) add("ongoing", "yes");
+    if (s.legisNoLeader) add("noleader", "yes");
+    if (s.legisNoPct) add("nopercentage", "yes");
+    if (s.legisFirst) add("first_election", "yes");
+    if (lang === "ko") add("party_title", "정당");
+    s.candidates.slice(0, 70).forEach((c, i) => {
+      const n = i + 1, fv = c.fieldValues || {};
+      P.push([null, ""]);
+      if (F.heading && fv[F.heading.id]) add(`heading${n}`, toWiki(fv[F.heading.id]));
+      add(`party${n}`, toWiki(c.party));
+      add(`colour${n}`, hexOf(c.color));
+      if (!s.legisNoLeader) add(`leader${n}`, toWiki(c.name));
+      if (s.ongoing) add(`current_seats${n}`, toWiki(legCellValue("current", c, F)));
+      else {
+        if (!s.legisNoPct) add(`percentage${n}`, toWiki(F.pct ? fv[F.pct.id] : ""));
+        add(`seats${n}`, toWiki(F.seats ? fv[F.seats.id] : ""));
+        if (!s.legisFirst) add(`last_election${n}`, toWiki(F.last ? fv[F.last.id] : ""));
+      }
+    });
+    P.push([null, ""]);
+    if (s.mapImage) { add("map_image", fileNameOf(s.mapImage, "Election_map.png")); add("map_caption", toWiki(s.mapCaption)); }
+    add("title", toWiki(s.title));
+    add("before_election", toWiki(s.beforeElection));
+    add("before_party", toWiki(s.beforeParty));
+    add("after_election", toWiki(s.afterElection));
+    add("after_party", toWiki(s.afterParty));
+    return `{{Infobox legislative election\n${paramBlock(P)}\n}}`;
+  }
+
+  // 나무위키: 같은 정당 표를 나무마크 표로
+  function namuLegRows(lab, rows, N) {
+    const F = legFields(), cols = legColumns();
+    rows.push(cols.map((c) => lab(c === "party" ? "정당" : { leader: "대표", pct: "득표율", seats: "의석", change: "+/–", current: state.ongoing === "counting" ? "선거 전 의석" : "현재 의석" }[c])));
+    state.candidates.forEach((c) => {
+      const heading = F.heading && c.fieldValues[F.heading.id];
+      if (heading) rows.push([T(heading, { span: cols.length, bg: "#f5f6f7", th: true })]);
+      rows.push(cols.map((col) => {
+        if (col === "party") {
+          return cell(`<span class="nm-sw" style="background:${hexOf(c.color)}"></span>${hasMarkup(c.party) ? fmt(c.party) : `<a>${fmt(c.party)}</a>`}`,
+            `{{{${hexOf(c.color)} ■}}} ${hasMarkup(c.party) ? toNamu(c.party) : `[[${plain(c.party)}]]`}`, { align: "l" });
+        }
+        const v = legCellValue(col, c, F);
+        if (col === "leader") return L(v);
+        if (col === "seats" || col === "current") return cell(`<b>${fmt(v)}</b>`, boldM(toNamu(v)), { align: "r" });
+        return T(v, { align: "r" });
+      }));
+    });
+    if (!state.ongoing) rows.push([T("의석을 얻은 정당만 표시합니다.", { span: cols.length, align: "l" })]);
+  }
+
   function renderWikipedia() {
-    const s = state, ref = s.electionType === "referendum";
-    const body = ref ? renderReferendum() : renderElection();
-    return `<table class="infobox wp-ib ${ref ? "ib-referendum" : "ib-election"}" style="width:${s.previewWidth}px">
+    const s = state, ref = s.electionType === "referendum", leg = s.electionType === "legislative_election";
+    const body = ref ? renderReferendum() : leg ? renderLegislative() : renderElection();
+    return `<table class="infobox wp-ib ${ref ? "ib-referendum" : leg ? "ib-legis-elect" : "ib-election"}" style="width:${s.previewWidth}px">
       <caption class="infobox-title">${fmt(s.electionName) || W().untitled}</caption><tbody>${body}</tbody></table>`;
   }
 
@@ -485,7 +660,8 @@
     const { list, opts, winner } = choiceRows();
     const hasVotes = ref && list.some((c) => String(c.votes || "").trim());
     const k = perRow();
-    const N = ref ? (hasVotes ? 3 : 2) : nextLeg ? 3 : 1 + k;
+    const legElect = s.electionType === "legislative_election";
+    const N = ref ? (hasVotes ? 3 : 2) : nextLeg ? 3 : legElect ? legColumns().length : 1 + k;
     const rest = N - 1;
 
     // 머리
@@ -533,6 +709,8 @@
       const segs = shareSegs(opts.map((c, i) => ({ label: plain(c.label), pct: pctOf(c.percentage), color: hexOf(c.color || CHOICE_COLORS[i]) })));
       if (segs) rows.push([barCell(segs, N)]);
       stats.forEach(([a, b]) => rows.push([lab(a), T(b, { span: rest })]));
+    } else if (legElect) {
+      namuLegRows(lab, rows, N);
     } else if (nextLeg) {
       rows.push([lab("정당"), lab("대표"), lab("현재 의석")]);
       s.candidates.forEach((c) => rows.push([
@@ -763,6 +941,7 @@
     const lang = tab === "wiki-en" ? "en" : "ko";
     if (state.electionType === "referendum") return wikiReferendum();
     if (state.electionType === "next_legislative") return wikiNextLeg(lang);
+    if (state.electionType === "legislative_election") return wikiLegislative(lang);
     return wikiElection(lang);
   }
   const CODE_NOTE = {
@@ -810,6 +989,7 @@
     $("in-type").value = state.electionType;
     $("in-perrow").value = state.candidatesPerRow || "auto";
     $("in-ongoing").checked = !!state.ongoing;
+    $("in-noleader").checked = !!state.legisNoLeader; $("in-nopct").checked = !!state.legisNoPct; $("in-first").checked = !!state.legisFirst;
   }
   function autoGrow(el) { el.style.height = "auto"; el.style.height = el.scrollHeight + 2 + "px"; }
 
@@ -820,7 +1000,11 @@
     $("step2-label").textContent = ref ? "투표 결과" : "후보·정당";
     $("label-details").textContent = ref ? "투표 주제" : "개요 (선출 의석 등)";
     const nextLeg = state.electionType === "next_legislative";
+    const legElect = state.electionType === "legislative_election";
     $("fields-fold").classList.toggle("hidden", nextLeg);
+    $("in-perrow").classList.toggle("hidden", legElect || nextLeg);
+    $("legis-opts").classList.toggle("hidden", !legElect);
+    $("cand-name-label").textContent = legElect || state.electionType !== "presidential" ? "대표" : "이름";
   }
 
   function renderStats() {
@@ -842,7 +1026,7 @@
   const ICON_D = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6 8 10.5 12.5 6"/></svg>';
 
   const activeCand = () => state.candidates.find((c) => String(c.id) === String(state.editingCandidateId));
-  const candLabel = (c) => plain(state.electionType === "next_legislative" ? c.party : c.name) || "이름 없음";
+  const candLabel = (c) => plain(/next_legislative|legislative_election/.test(state.electionType) ? c.party : c.name) || "이름 없음";
 
   function renderChips() {
     const box = $("cand-chips");
@@ -984,6 +1168,7 @@
     state.previewWidth = clampWidth(d.previewWidth || 320);
     state.namuThemeColor = d.namuThemeColor || "";
     state.ongoing = d.ongoing === true || d.ongoing === "yes";
+    state.legisNoLeader = !!d.legisNoLeader; state.legisNoPct = !!d.legisNoPct; state.legisFirst = !!d.legisFirst;
     state.editingCandidateId = state.candidates.length ? String(state.candidates[0].id) : "";
     if (keepView) {
       Object.assign(state, view);
@@ -1088,7 +1273,8 @@
         renderChips(); refresh(); return;
       }
       if (t.id === "btn-add-cand") {
-        if (state.candidates.length >= 9) { toast("인포박스 틀은 후보를 9명까지 지원합니다"); return; }
+        const maxC = state.electionType === "legislative_election" ? 70 : 9;
+        if (state.candidates.length >= maxC) { toast(`이 틀은 ${maxC}개까지 지원합니다`); return; }
         const id = String(state.candidates.reduce((m, c) => Math.max(m, parseInt(c.id, 10) || 0), 0) + 1);
         const palette = ["#004ea2", "#e61e2b", "#ff7016", "#00a85a", "#7b2d8e", "#ffc800", "#0aa1dd", "#8b5a2b", "#4d4d4d"];
         state.candidates.push({ id, name: isEn() ? `Candidate ${id}` : `후보 ${id}`, party: isEn() ? "Party" : "정당", color: palette[(state.candidates.length) % palette.length], fieldValues: {} });
@@ -1161,6 +1347,9 @@
       renderEditor(); applyToolbar(); refresh();
     });
     $("in-ongoing").addEventListener("change", (e) => { state.ongoing = e.target.checked; refresh(); });
+    $("in-noleader").addEventListener("change", (e) => { state.legisNoLeader = e.target.checked; refresh(); });
+    $("in-nopct").addEventListener("change", (e) => { state.legisNoPct = e.target.checked; refresh(); });
+    $("in-first").addEventListener("change", (e) => { state.legisFirst = e.target.checked; refresh(); });
     $("in-perrow").addEventListener("change", (e) => { state.candidatesPerRow = e.target.value; refresh(); });
 
     // 툴바

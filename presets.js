@@ -259,6 +259,32 @@ window.PRESETS = {
   }
 };
 
+/* 의회 선거 (Infobox legislative election) 예제 */
+window.PRESETS.ko_legis_2028_fictional = {
+  electionType: "legislative_election",
+  electionName: "2028년 가상 공화국 의회 선거",
+  flagImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Flag_of_South_Korea.svg/50px-Flag_of_South_Korea.svg.png",
+  beforeElectionYear: "2024", afterElectionYear: "2032",
+  electionDate: "2028년 4월 12일", title: "총리", previewWidth: 320,
+  turnoutDetails: "의회 '''300석''' 전체\n과반 기준 '''151석'''",
+  registeredVoters: "44,500,000", turnoutText: "'''68.4%''' ({{increase}} 1.4%p)",
+  mapImage: "", mapCaption: "선거구별 1위 정당",
+  beforeElection: "이선우", beforeParty: "새한빛연대", afterElection: "한민우", afterParty: "자유혁신당",
+  customStats: [],
+  candidateFieldsConfig: [
+    { id: "percentage", label: "득표율", type: "text" },
+    { id: "seatsWon", label: "의석", type: "text" },
+    { id: "lastElection", label: "이전 선거 의석", type: "text" }
+  ],
+  candidates: [
+    { id: "1", name: "한민우", party: "자유혁신당", color: "#E61E2B", fieldValues: { percentage: "41.2", seatsWon: "142", lastElection: "108" } },
+    { id: "2", name: "이재현", party: "새한빛연대", color: "#004EA2", fieldValues: { percentage: "38.7", seatsWon: "131", lastElection: "173" } },
+    { id: "3", name: "서지훈", party: "개혁전진당", color: "#FF7016", fieldValues: { percentage: "9.6", seatsWon: "17", lastElection: "6" } },
+    { id: "4", name: "윤하린", party: "녹색미래당", color: "#00A85A", fieldValues: { percentage: "5.1", seatsWon: "6", lastElection: "3" } },
+    { id: "5", name: "", party: "무소속", color: "#808080", fieldValues: { percentage: "2.0", seatsWon: "4", lastElection: "10" } }
+  ]
+};
+
 /* 영어 예제 — 숫자·색·배치는 한국어 예제와 같고 글만 영어 */
 (function () {
   const K = window.PRESETS, C = (o) => JSON.parse(JSON.stringify(o));
@@ -362,6 +388,20 @@ window.PRESETS = {
   });
   [["Park Seo-yeon", "Fictional Democratic Party"], ["Kim Tae-jun", "Liberty People's Party"], ["Seo Ji-hun", "Reform Forward Party"]]
     .forEach(([n, p], i) => { Object.assign(E.ko_pres_2025_fictional.candidates[i], { name: n, party: p }); });
+
+  E.ko_legis_2028_fictional = Object.assign(C(K.ko_legis_2028_fictional), {
+    electionName: "2028 Fictional Republic parliamentary election", electionDate: "12 April 2028", title: "Prime Minister",
+    turnoutDetails: "All '''300''' seats in the Assembly\n'''151''' seats needed for a majority",
+    turnoutText: "'''68.4%''' ({{increase}} 1.4 pp)", mapCaption: "Winning party by constituency",
+    beforeElection: "Lee Seon-u", beforeParty: "New Hanbit Solidarity", afterElection: "Han Min-u", afterParty: "Liberty Innovation Party",
+    candidateFieldsConfig: [
+      { id: "percentage", label: "Vote %", type: "text" },
+      { id: "seatsWon", label: "Seats", type: "text" },
+      { id: "lastElection", label: "Last election", type: "text" }
+    ]
+  });
+  [["Han Min-u", "Liberty Innovation Party"], ["Lee Jae-hyeon", "New Hanbit Solidarity"], ["Seo Ji-hun", "Reform Forward Party"], ["Yun Ha-rin", "Green Future Party"], ["", "Independent"]]
+    .forEach(([n, p], i) => Object.assign(E.ko_legis_2028_fictional.candidates[i], { name: n, party: p }));
 
   // 숫자 단위도 영어식으로 (%p → pp)
   const fix = (o) => {

@@ -4,7 +4,7 @@
 
 ## 할 수 있는 것
 
-- 선거 형태: 대통령 선거, 국회의원 선거, 지방선거, 차기 의원선거(의석표), 국민투표
+- 선거 형태: 대통령 선거, 국회의원 선거, 지방선거, 의회 선거(정당 표, Infobox legislative election), 차기 의원선거(의석표), 국민투표
 - 미리보기 양식 전환
   - **위키백과**: 영어판 `Infobox election`, `Infobox referendum` 틀의 배치를 따름 (← 이전 | 선거일 | 다음 →, 후보 사진과 정당 색 띠, 제1당·제2당 머리, 선거 전/후 칸, 국민투표 ✓/✗ 결과표와 범례)
   - **나무위키**: 나무마크 표 렌더링을 따름 (테마 색 머리, 기호·정당 색 칸, 득표율 막대, 다크 모드 색 지정)
@@ -15,7 +15,7 @@
 
 ## 위키백과 양식
 
-- 영어판 `Template:Infobox election`, `Template:Infobox referendum` 소스 구조를 따름
+- 영어판 `Template:Infobox election`, `Template:Infobox legislative election`, `Template:Infobox referendum` 소스 구조를 따름
 - 미리보기는 한국어/English 전환: 틀이 정하는 라벨(Registered, Turnout, First party, Elected …, Results 등)이 언어에 맞게 바뀌고, 직접 입력한 내용은 그대로
 - 한국어 모드에는 한국어만, English 모드에는 영어만 나오도록 예제도 언어별로 따로 있음 (고치지 않은 예제는 언어를 바꾸면 함께 바뀜)
 - `ongoing = yes`면 왼쪽 칸이 현직(Incumbent)으로, 결과가 없으면 미정(TBD)

@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>선거 인포박스 빌더</title>
   <meta name="description" content="위키백과 Infobox election·referendum과 나무위키 표 양식의 선거 인포박스를 만들고 코드와 이미지로 내보냅니다.">
-  <link rel="stylesheet" href="style.css?v=202610271122">
+  <link rel="stylesheet" href="style.css?v=202610271127">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
-  <script src="presets.js?v=202610271122" defer></script>
-  <script src="app.js?v=202610271122" defer></script>
+  <script src="presets.js?v=202610271127" defer></script>
+  <script src="app.js?v=202610271127" defer></script>
 </head>
 <body>
 
@@ -29,6 +29,7 @@
       <option value="">예제 불러오기…</option>
       <option value="ko_pres_2025_fictional">2025 가상 대통령 선거</option>
       <option value="ko_leg_2024_fictional">2024 가상 국회의원 선거</option>
+      <option value="ko_legis_2028_fictional">2028 가상 의회 선거 (정당 표)</option>
       <option value="ko_local_2026_fictional">2026 가상 지방선거</option>
       <option value="ko_referendum_quebec_1995">1995 퀘벡 독립 국민투표</option>
       <option value="ko_referendum_vietnam_1955">1955 베트남 국체 국민투표</option>
@@ -66,6 +67,7 @@
                 <option value="presidential">대통령 선거</option>
                 <option value="legislative">국회의원 선거</option>
                 <option value="local">지방선거</option>
+                <option value="legislative_election">의회 선거 (정당 표)</option>
                 <option value="next_legislative">차기 의원선거 (의석표)</option>
                 <option value="referendum">국민투표</option>
               </select>
@@ -149,6 +151,11 @@
               <option value="3">한 줄에 3명</option>
             </select>
           </div>
+          <div class="inline hidden" id="legis-opts" style="flex-wrap:wrap;gap:6px 16px">
+            <label class="tool" style="font-weight:500"><input type="checkbox" id="in-noleader"> 대표 열 숨기기</label>
+            <label class="tool" style="font-weight:500"><input type="checkbox" id="in-nopct"> 득표율 열 숨기기</label>
+            <label class="tool" style="font-weight:500"><input type="checkbox" id="in-first"> 첫 선거 (+/– 열 없음)</label>
+          </div>
           <div class="chips" id="cand-chips"></div>
 
           <div class="card" id="cand-card">
@@ -159,7 +166,7 @@
             </div>
             <div class="row">
               <div class="field">
-                <label for="cand-name">이름</label>
+                <label for="cand-name" id="cand-name-label">이름</label>
                 <input id="cand-name" class="input" data-cand="name">
               </div>
               <div class="field">
