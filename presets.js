@@ -219,8 +219,7 @@ window.PRESETS = {
     candidateFieldsConfig: [
       { id: "image", label: "프로필 이미지", type: "image" },
       { id: "votes", label: "득표수", type: "text" },
-      { id: "percentage", label: "득표율", type: "text" },
-      { id: "custom_slogan", label: "대표 슬로건", type: "text" }
+      { id: "percentage", label: "득표율", type: "text" }
     ],
     candidates: [
       {
@@ -231,8 +230,7 @@ window.PRESETS = {
         fieldValues: {
           image: "",
           votes: "17,287,513",
-          percentage: "'''49.42%'''",
-          custom_slogan: "'''더 나은 가상, 더 튼튼한 미래'''"
+          percentage: "'''49.42%'''"
         }
       },
       {
@@ -243,8 +241,7 @@ window.PRESETS = {
         fieldValues: {
           image: "",
           votes: "14,395,639",
-          percentage: "'''41.15%'''",
-          custom_slogan: "'''상식과 법치, 상생하는 발전'''"
+          percentage: "'''41.15%'''"
         }
       },
       {
@@ -255,8 +252,7 @@ window.PRESETS = {
         fieldValues: {
           image: "",
           votes: "2,917,523",
-          percentage: "'''8.34%'''",
-          custom_slogan: "'''청년의 힘으로 시대를 혁신합니다'''"
+          percentage: "'''8.34%'''"
         }
       }
     ]
@@ -361,14 +357,11 @@ window.PRESETS = {
     candidateFieldsConfig: [
       { id: "image", label: "Image", type: "image" },
       { id: "votes", label: "Popular vote", type: "text" },
-      { id: "percentage", label: "Percentage", type: "text" },
-      { id: "custom_slogan", label: "Slogan", type: "text" }
+      { id: "percentage", label: "Percentage", type: "text" }
     ]
   });
-  [["Park Seo-yeon", "Fictional Democratic Party", "'''A better tomorrow, a stronger future'''"],
-   ["Kim Tae-jun", "Liberty People's Party", "'''Common sense, rule of law, shared growth'''"],
-   ["Seo Ji-hun", "Reform Forward Party", "'''Youth for a new era'''"]]
-    .forEach(([n, p, sl], i) => { Object.assign(E.ko_pres_2025_fictional.candidates[i], { name: n, party: p }); E.ko_pres_2025_fictional.candidates[i].fieldValues.custom_slogan = sl; });
+  [["Park Seo-yeon", "Fictional Democratic Party"], ["Kim Tae-jun", "Liberty People's Party"], ["Seo Ji-hun", "Reform Forward Party"]]
+    .forEach(([n, p], i) => { Object.assign(E.ko_pres_2025_fictional.candidates[i], { name: n, party: p }); });
 
   // 숫자 단위도 영어식으로 (%p → pp)
   const fix = (o) => {
