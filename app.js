@@ -958,10 +958,6 @@
     const nm = state.infoboxStyle === "namu";
     cap.className = state.selectedFont && state.selectedFont !== "wikipedia" ? `ff-${state.selectedFont}` : "";
     cap.innerHTML = nm ? renderNamu() : renderWikipedia();
-    const mock = $("mock");
-    mock.className = `mock ${nm ? "mock-nm" : "mock-wp"}`;
-    $("mock-title").textContent = plain(state.electionName) || "선거";
-    $("mock-sub").textContent = nm ? "최근 수정 시각: 방금 전" : (state.outputLang === "en" ? "From Wikipedia, the free encyclopedia" : "위키백과, 우리 모두의 백과사전.");
   }
   function renderCode() {
     const ref = state.electionType === "referendum";
