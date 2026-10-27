@@ -10,6 +10,9 @@
 @font-face { font-family: 'GMarketSans'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff'); font-weight: 500; font-display: swap; }
 @font-face { font-family: 'GMarketSans'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff'); font-weight: 700; font-display: swap; }
 
+@font-face { font-family: 'SeochoDotum'; src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/2610082345@seochodotum-regular/seochodotum-regular/SeochoDotum-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'SeochoBatang'; src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/2608211044@seochobatang-regular/seochobatang-regular/SeochoBatang-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+
 :root {
   --paper: #eef1f4;
   --panel: #ffffff;
@@ -279,6 +282,8 @@ details.fold .fold-body { padding: 0 14px 14px; display: flex; flex-direction: c
 .ff-onestore, .ff-onestore * { font-family: 'OneStoreMobileGothicTitleFont', sans-serif !important; }
 .ff-spoqa, .ff-spoqa * { font-family: 'Spoqa Han Sans', 'Spoqa Han Sans Neo', sans-serif !important; }
 .ff-nostalgic, .ff-nostalgic * { font-family: 'NostalgicPoliceVibe', sans-serif !important; }
+.ff-seochodotum, .ff-seochodotum * { font-family: 'SeochoDotum', sans-serif !important; }
+.ff-seochobatang, .ff-seochobatang * { font-family: 'SeochoBatang', serif !important; }
 
 .ph {
   width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
