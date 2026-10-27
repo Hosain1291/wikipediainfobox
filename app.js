@@ -178,6 +178,8 @@
     if (state.electionType === "presidential") return [`선거 전 ${t}`, `${t} 당선인`];
     return [`선거 전 ${t}`, `선거 후 ${t}`];
   }
+  const isIncumbent = () => !state.afterElection && !state.afterParty && state.electionType !== "referendum";
+  const incumbentHead = () => (plain(state.title) ? `현직 ${plain(state.title)}` : "현직");
   const hasBA = () => !!(state.beforeElection || state.beforeParty || state.afterElection || state.afterParty);
   const partyColor = (name) => {
     const c = state.candidates.find((x) => plain(x.party) && plain(x.party) === plain(name));
@@ -236,6 +238,9 @@
     if (!hasBA()) return "";
     const s = state, [hb, ha] = baHeads();
     const chip = (p) => { const c = partyColor(p); return c ? `<span class="chip" style="background:${hexOf(c)}"></span>` : ""; };
+    if (isIncumbent()) {
+      return wpHr() + `<tr><td colspan="3"><table class="wp-ba"><tr><td class="b"><div class="h">${escHtml(incumbentHead())}</div><a>${fmt(s.beforeElection) || "—"}</a><br>${chip(s.beforeParty)}<a>${fmt(s.beforeParty)}</a></td></tr></table></td></tr>`;
+    }
     return wpHr() + `<tr><td colspan="3"><table class="wp-ba"><tr>
       <td class="b"><div class="h">${escHtml(hb)}</div><a>${fmt(s.beforeElection) || "—"}</a><br>${chip(s.beforeParty)}<a>${fmt(s.beforeParty)}</a></td>
       <td class="arr">→</td>
@@ -472,6 +477,11 @@
       const [hb, ha] = baHeads();
       const whoH = (n, p) => `<b>${hasMarkup(n) ? fmt(n) : `<a>${fmt(n) || "—"}</a>`}</b>${p ? `<br><span style="font-size:.88em">${hasMarkup(p) ? fmt(p) : `<a>${fmt(p)}</a>`}</span>` : ""}`;
       const whoM = (n, p) => boldM(hasMarkup(n) ? toNamu(n) : (plain(n) ? `[[${plain(n)}]]` : "—")) + (p ? `[br]{{{-1 ${hasMarkup(p) ? toNamu(p) : `[[${plain(p)}]]`}}}}` : "");
+      if (isIncumbent()) {
+        rows.push([cell(`<div class="nm-ba-h">${escHtml(incumbentHead())}</div>${whoH(s.beforeElection, s.beforeParty)}`,
+          `{{{-1 ${boldM(incumbentHead())}}}}[br]${whoM(s.beforeElection, s.beforeParty)}`, { span: N })]);
+        return { rows, N, theme: th };
+      }
       const html = `<div class="nm-ba"><div><div class="nm-ba-h">${escHtml(hb)}</div>${whoH(s.beforeElection, s.beforeParty)}</div><div class="arr">→</div><div class="r"><div class="nm-ba-h">${escHtml(ha)}</div>${whoH(s.afterElection, s.afterParty)}</div></div>`;
       const mark = '{{{#!wiki style="display:flex; justify-content:space-between; align-items:center; gap:8px"\n'
         + `{{{#!wiki style="text-align:left"\n{{{-1 ${boldM(hb)}}}}[br]${whoM(s.beforeElection, s.beforeParty)}}}}`
