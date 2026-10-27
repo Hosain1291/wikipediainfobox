@@ -1,0 +1,16 @@
+# GitHub Pages (Jekyll) 설정
+#
+# README.md에는 {{선거 정보}}, {{color|…}} 같은 위키 틀 문법이 들어 있습니다.
+# Jekyll의 Liquid가 이것을 자기 태그로 읽으면 빌드가 실패하므로 README는 처리하지 않습니다.
+# (GitHub 레포 화면에는 README가 그대로 보입니다.)
+#
+# index.html, app.js, style.css, presets.js 는 머리말(front matter)이 없어
+# Jekyll이 손대지 않고 그대로 복사합니다.
+
+title: 선거 인포박스 빌더
+description: 한 번 입력해서 위키백과와 나무위키 양식의 선거 인포박스로 내보냅니다
+lang: ko
+
+exclude:
+  - README.md
+  - .nojekyll
