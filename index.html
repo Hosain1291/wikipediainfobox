@@ -5,10 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>선거 인포박스 빌더</title>
   <meta name="description" content="위키백과 Infobox election·referendum과 나무위키 표 양식의 선거 인포박스를 만들고 코드와 이미지로 내보냅니다.">
-  <link rel="stylesheet" href="style.css?v=202610271243">
+  <script>
+    (function () {
+      var pref = "auto";
+      try { pref = localStorage.getItem("ib-theme") || "auto"; } catch (e) {}
+      var dark = pref === "dark" || (pref === "auto" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.setAttribute("data-mode", dark ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css?v=202611121024">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
-  <script src="presets.js?v=202610271243" defer></script>
-  <script src="app.js?v=202610271243" defer></script>
+  <script src="presets.js?v=202611121024" defer></script>
+  <script src="app.js?v=202611121024" defer></script>
 </head>
 <body>
 
@@ -24,6 +32,14 @@
     </div>
   </div>
   <div class="appbar-actions">
+    <div class="seg seg-sm theme-seg" role="group" aria-label="화면 밝기">
+      <button type="button" data-theme-pick="auto" aria-pressed="false" title="기기 설정을 따름">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5Z" fill="currentColor"/></svg>자동</button>
+      <button type="button" data-theme-pick="light" aria-pressed="false">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>라이트</button>
+      <button type="button" data-theme-pick="dark" aria-pressed="false">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.6A5.8 5.8 0 0 1 6.4 2.5a5.8 5.8 0 1 0 7.1 7.1Z"/></svg>다크</button>
+    </div>
     <label class="sr-only" for="preset-select">예제 불러오기</label>
     <select id="preset-select" class="select" style="width:auto">
       <option value="">예제 불러오기…</option>

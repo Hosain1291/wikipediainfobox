@@ -789,7 +789,8 @@
     const { rows, theme } = namuRows();
     const body = rows.map((r) => `<tr>${r.map((c) => {
       const tag = c.th ? "th" : "td";
-      const st = [c.bg && `background:${c.bg}`, c.fg && `color:${c.fg}`, `text-align:${c.align === "l" ? "left" : c.align === "r" ? "right" : "center"}`].filter(Boolean).join(";");
+      const bgCss = c.bg === "#f5f6f7" ? "var(--nm-soft, #f5f6f7)" : c.bg;
+      const st = [c.bg && `background:${bgCss}`, c.fg && `color:${c.fg}`, `text-align:${c.align === "l" ? "left" : c.align === "r" ? "right" : "center"}`].filter(Boolean).join(";");
       return `<${tag}${c.span > 1 ? ` colspan="${c.span}"` : ""} class="${c.cls || ""}" style="${st}">${c.html}</${tag}>`;
     }).join("")}</tr>`).join("");
     const { N } = namuRows();
@@ -804,7 +805,7 @@
       let a = "";
       if (ri === 0 && ci === 0) a += `<tablewidth=${state.previewWidth}><tablealign=right><tablebordercolor=${theme}><tablebgcolor=#ffffff,#1f2023><tablecolor=#373a3c,#dddddd>`;
       if (c.span > 1) a += `<-${c.span}>`;
-      if (c.bg) a += `<bgcolor=${c.bg}>`;
+      if (c.bg) a += c.bg === "#f5f6f7" ? "<bgcolor=#f5f6f7,#2d2f34>" : `<bgcolor=${c.bg}>`;
       if (c.fg) a += `<color=${c.fg}>`;
       a += c.align === "l" ? "<(>" : c.align === "r" ? "<)>" : "<:>";
       let m = c.mark || "";
@@ -1306,6 +1307,7 @@
         applyToolbar(); refresh(); return;
       }
       if (d.lang) { setLang(d.lang); return; }
+      if (d.themePick) { setTheme(d.themePick); return; }
     });
 
     $("btn-del-cand").addEventListener("click", () => {
@@ -1423,7 +1425,7 @@
     const target = $("capture").firstElementChild;
     if (!target || typeof html2canvas !== "function") { toast("이미지 도구를 아직 불러오는 중입니다. 잠시 후 다시 눌러 주세요"); return; }
     toast("PNG로 바꾸는 중…");
-    html2canvas(target, { useCORS: true, backgroundColor: null, scale: 2 })
+    html2canvas(target, { useCORS: true, backgroundColor: getComputedStyle(document.querySelector(".stage")).backgroundColor, scale: 2 })
       .then((canvas) => {
         try { download(canvas.toDataURL("image/png"), `${safeName()}_${state.infoboxStyle === "namu" ? "namu" : "wiki"}.png`); toast("PNG로 저장했습니다"); }
         catch (err) { toast("다른 사이트의 이미지가 저장을 막았습니다. 이미지를 파일로 올린 뒤 다시 저장하세요"); }
@@ -1448,8 +1450,26 @@
     clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), 2200);
   }
 
+  /* ---------- 라이트 / 다크 ---------- */
+  const darkMQ = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function themePref() { try { return localStorage.getItem("ib-theme") || "auto"; } catch (e) { return "auto"; } }
+  function applyTheme(pref) {
+    const dark = pref === "dark" || (pref === "auto" && darkMQ && darkMQ.matches);
+    document.documentElement.setAttribute("data-mode", dark ? "dark" : "light");
+    document.querySelectorAll("[data-theme-pick]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.themePick === pref)));
+  }
+  function setTheme(pref) {
+    try { localStorage.setItem("ib-theme", pref); } catch (e) {}
+    applyTheme(pref);
+  }
+  if (darkMQ) {
+    const onChange = () => { if (themePref() === "auto") applyTheme("auto"); };
+    if (darkMQ.addEventListener) darkMQ.addEventListener("change", onChange); else if (darkMQ.addListener) darkMQ.addListener(onChange);
+  }
+
   /* ---------- 시작 ---------- */
   function init() {
+    applyTheme(themePref());
     bind();
     if (!loadPreset("ko_pres_2025_fictional")) loadData({}, true);
     window.__infobox = { state: () => state, codeFor, loadData }; // 디버깅용
